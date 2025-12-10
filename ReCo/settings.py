@@ -10,10 +10,16 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# DEBUG por env (True em dev, False em prod)
+DEBUG = os.environ.get('DJANGO_DEBUG', '1') in ('1', 'true', 'True', 'yes')
+
+# Hosts permitidos (inclua seu domínio no PA)
+ALLOWED_HOSTS = os.environ.get('DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost,tr3vos.pythonanywhere.com').split(',')
 
 # Fallback: usa MySQL se variáveis existirem; caso contrário, SQLite
 if (
