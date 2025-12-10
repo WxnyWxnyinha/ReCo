@@ -12,7 +12,13 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
-from dotenv import load_dotenv
+
+# carregamento seguro do dotenv (não falha se python-dotenv não existir)
+try:
+    from dotenv import load_dotenv
+except Exception:
+    def load_dotenv(*args, **kwargs):  # fallback silencioso
+        return False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,13 +40,18 @@ else:
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-7&f2v&)o0c8v7tyd)o83)0zq$0p6(vnse9@df46x0nd9b&t1(t')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-dev-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = int(os.environ.get('DJANGO_DEBUG', default=0))
+# Garante True por padrão em dev quando variável não está definida
+DEBUG = os.environ.get('DJANGO_DEBUG', '1') in ('1', 'True', 'true', 'yes')
 
-# Desenvolvimento: liberar hosts/origens usadas pelo browser/preview
-ALLOWED_HOSTS = str(os.environ.get('DJANGO_ALLOWED_HOSTS')).split(',')  # remover "*" em produção
+# ALLOWED_HOSTS a partir da env ou fallback seguro para dev
+_allowed = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
+if _allowed:
+    ALLOWED_HOSTS = [h.strip() for h in _allowed.split(',') if h.strip()]
+else:
+    ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
 # Se você acessar via forwarded URL (ex.: https://123-45-67-89.preview.app)
 # adicione a origem completa com esquema:
