@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Reciclagem — Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+<div class="container d-flex flex-column gap-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h1 class="h3 mb-1">Reciclagem</h1>
+      <p class="text-muted mb-0">Acompanhe lotes, parceiros e impacto ambiental.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a class="btn btn-outline-secondary" href="{% url 'doacoes:recycling_report' %}">Relatório</a>
+      <a class="btn btn-primary" href="{% url 'doacoes:recycling_create_batch' %}">Novo lote</a>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Lotes</p>
+          <h4 class="mb-0">{{ total_batches }}</h4>
+          <small class="text-success">{{ active_batches }} ativos</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Parceiros</p>
+          <h4 class="mb-0">{{ total_partners }}</h4>
+          <small class="text-muted">ativos</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Peso processado</p>
+          <h4 class="mb-0">{{ total_weight|floatformat:1 }} kg</h4>
+          <small class="text-muted">total registrado</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Itens para reciclar</p>
+          <h4 class="mb-0">{{ items_for_recycling }}</h4>
+          <small class="text-muted">aguardando lote</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Impacto ambiental</h5>
+            <span class="badge bg-success-subtle text-success">Baseado em {{ total_weight|floatformat:1 }} kg</span>
+          </div>
+          <ul class="list-unstyled mb-0">
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span>CO₂ evitado</span><strong>{{ environmental_impact.co2_avoided_kg|floatformat:1 }} kg</strong>
+            </li>
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span>Energia economizada</span><strong>{{ environmental_impact.energy_saved_kwh|floatformat:1 }} kWh</strong>
+            </li>
+            <li class="d-flex justify-content-between py-1 border-bottom">
+              <span>Água economizada</span><strong>{{ environmental_impact.water_saved_liters|floatformat:0 }} L</strong>
+            </li>
+            <li class="d-flex justify-content-between py-1">
+              <span>Árvores preservadas</span><strong>{{ environmental_impact.trees_preserved|floatformat:2 }}</strong>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Parceiros ativos</h5>
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'doacoes:recycling_partner_list' %}">Ver todos</a>
+          </div>
+          {% if partners %}
+          <div class="list-group list-group-flush">
+            {% for partner in partners %}
+              <a class="list-group-item list-group-item-action d-flex justify-content-between" href="{% url 'doacoes:recycling_partner_detail' partner.pk %}">
+                <div>
+                  <strong>{{ partner.company_name }}</strong><br>
+                  <small class="text-muted">{{ partner.total_batches }} lotes • {{ partner.total_weight|default_if_none:0|floatformat:1 }} kg</small>
+                </div>
+                <span class="badge bg-light text-secondary">{{ partner.get_status_display|default:"Ativo" }}</span>
+              </a>
+            {% endfor %}
+          </div>
+          {% else %}
+            <p class="text-muted mb-0">Nenhum parceiro cadastrado.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Lotes recentes</h5>
+        <a class="btn btn-sm btn-outline-primary" href="{% url 'doacoes:recycling_report' %}">Relatório</a>
+      </div>
+      {% if recent_batches %}
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Parceiro</th>
+              <th>Status</th>
+              <th>Peso (kg)</th>
+              <th>Itens</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for batch in recent_batches %}
+              <tr>
+                <td>{{ batch.batch_code }}</td>
+                <td>{{ batch.partner.company_name }}</td>
+                <td><span class="badge bg-secondary">{{ batch.get_status_display }}</span></td>
+                <td>{{ batch.actual_weight_kg|default_if_none:batch.estimated_weight_kg|floatformat:1 }}</td>
+                <td>{{ batch.total_items }}</td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-primary" href="{% url 'doacoes:recycling_batch_detail' batch.pk %}">Abrir</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="text-muted mb-0">Nenhum lote criado até o momento.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

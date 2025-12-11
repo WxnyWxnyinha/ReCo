@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Meu Perfil — ReCo{% endblock %}
+
+{% block content %}
+  <div class="container-fluid mt-4">
+  <div class="container d-flex flex-column gap-4">
+    <section class="profile-summary">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div class="profile-summary__identity">
+          <div class="profile-photo">
+            {% if profile.profile_photo %}
+              <img src="{{ profile.profile_photo.url }}" alt="Foto de {{ user.get_full_name|default:user.username }}">
+            {% else %}
+              <span>{{ user.first_name|default:user.username|slice:':1'|upper }}</span>
+            {% endif %}
+          </div>
+          <div>
+            <h1 class="h3 mb-1">{{ user.get_full_name|default:user.username }}</h1>
+            <p class="text-muted mb-0">{{ profile.get_user_type_display|default:"Perfil incompleto" }}</p>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <a class="btn btn-outline-secondary" href="{% url 'home' %}">Voltar</a>
+          <a class="btn btn-primary" href="{% url 'perfil:edit' %}">Editar perfil</a>
+        </div>
+      </div>
+
+      <dl>
+        <dt>Usuário</dt>
+        <dd>{{ user.username }}</dd>
+
+        <dt>Email</dt>
+        <dd>{{ user.email|default:"—" }}</dd>
+
+        <dt>Telefone</dt>
+        <dd>{{ profile.phone|default:"—" }}</dd>
+
+        <dt>Cidade</dt>
+        <dd>{% if profile.city %}{{ profile.get_city_display }}{% else %}—{% endif %}</dd>
+
+        <dt>Tipo de usuário</dt>
+        <dd>{% if profile.user_type %}{{ profile.get_user_type_display }}{% else %}—{% endif %}</dd>
+
+        {% if profile.user_type == 'pf' %}
+          <dt>CPF</dt>
+          <dd>{{ profile.cpf_cnpj|default:"—" }}</dd>
+
+          <dt>Data de nascimento</dt>
+          <dd>{% if profile.birth_date %}{{ profile.birth_date|date:"d/m/Y" }}{% else %}—{% endif %}</dd>
+        {% elif profile.user_type == 'pj' %}
+          <dt>CNPJ</dt>
+          <dd>{{ profile.cpf_cnpj|default:"—" }}</dd>
+
+          <dt>Razão social</dt>
+          <dd>{{ profile.razao_social|default:"—" }}</dd>
+        {% endif %}
+      </dl>
+    </section>
+  </div>
+  </div>
+{% endblock %}

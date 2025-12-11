@@ -1,0 +1,477 @@
+{% extends 'base.html' %}
+{% block title %}Chat — {{ donation.title }}{% endblock %}
+
+{% block content %}
+  <div class="container-fluid mt-4">
+  <div class="container d-flex flex-column gap-4">
+    <section class="section-card">
+      <div class="chat-header-top">
+        <div>
+          <p class="text-muted mb-1">{{ donation.city|default:'Cidade não informada' }}</p>
+          <h1 class="h3 mb-2">Conversa sobre {{ donation.title }}</h1>
+          {% if active_participant %}
+            <small class="text-muted">Com {{ active_participant.get_full_name|default:active_participant.username }}</small>
+          {% endif %}
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          {% if is_owner and active_participant and not donation.beneficiary %}
+            <a href="{% url 'doacoes:select_beneficiary' donation.pk active_participant.pk %}" class="btn btn-success" onclick="return confirm('Confirma que deseja doar este item para {{ active_participant.get_full_name|default:active_participant.username }}?')">
+              <i class="fas fa-gift me-1"></i>Doar para esta pessoa
+            </a>
+          {% elif is_owner and donation.beneficiary %}
+            <div class="alert alert-success mb-0 py-2 px-3">
+              <i class="fas fa-check-circle me-1"></i>
+              <strong>Doação confirmada para {{ donation.beneficiary.get_full_name|default:donation.beneficiary.username }}</strong>
+            </div>
+          {% endif %}
+          <a class="btn btn-outline-secondary" href="{% url 'doacoes:detail' donation.pk %}">Voltar ao anúncio</a>
+          <a class="btn btn-outline-secondary" href="{% url 'doacoes:chats' %}">Ver todos os chats</a>
+        </div>
+      </div>
+
+      {% if is_owner and participants %}
+        <form method="get" class="row g-2 mt-4">
+          <div class="col-md-6">
+            <label class="form-label">Conversa com</label>
+            <select class="form-select" name="with" onchange="this.form.submit()">
+              {% for person in participants %}
+                <option value="{{ person.pk }}" {% if active_participant and person.pk == active_participant.pk %}selected{% endif %}>
+                  {{ person.get_full_name|default:person.username }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </form>
+      {% endif %}
+
+      {% if active_participant and messages_url %}
+        <div id="chat-box" class="chat-box mt-4" data-messages-url="{{ messages_url }}" data-empty-text="Nenhuma mensagem ainda. Dê o primeiro oi!" data-current-user="{{ request.user.id }}" data-donor-id="{{ donation.donor.id }}"></div>
+
+        <form id="msg-form" class="chat-form mt-4" data-post-url="{{ post_url }}" enctype="multipart/form-data">
+          {% csrf_token %}
+          
+          <input id="image-input" type="file" name="image" accept="image/*" style="display: none;">
+          
+          <!-- Preview do anexo -->
+          <div id="image-preview" class="image-preview-wrapper" style="display: none; margin-bottom: 12px;">
+            <div class="image-preview-container">
+              <img id="preview-img" src="" alt="Preview" class="image-preview">
+              <button id="remove-image-btn" class="remove-image-btn" type="button" title="Remover imagem">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="message-input-wrapper">
+            <button id="attach-btn" class="attach-btn" type="button" title="Anexar imagem">
+              <i class="fas fa-paperclip"></i>
+            </button>
+            <div class="textarea-wrapper">
+              {{ form.text }}
+            </div>
+            <button id="send-btn" class="send-btn" type="submit" title="Enviar">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </form>
+      {% else %}
+        <p class="text-muted mt-4 mb-0">Selecione um interlocutor ou aguarde alguém iniciar a conversa.</p>
+      {% endif %}
+    </section>
+  </div>
+
+  <style>
+    /* Reset and normal layout */
+    .message-stack,
+    .site-footer {
+      display: block !important;
+    }
+
+    .site-main {
+      margin: auto;
+      padding: 20px;
+    }
+
+    /* Chat styling within container */
+    .chat-header-top {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: start;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .chat-box {
+      min-height: 400px;
+      max-height: 500px;
+      overflow-y: auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #fff 0%, rgba(242, 183, 5, 0.05) 100%);
+      border: 2px solid #D96704;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .chat-message {
+      margin-bottom: 0;
+      padding: 12px 16px;
+      border-radius: 16px;
+      word-wrap: break-word;
+      max-width: 65%;
+      width: fit-content;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Mensagem própria (dono) - Laranja */
+    .chat-message.owner {
+      background: linear-gradient(135deg, #D96704, #E87E2F);
+      color: #fff;
+      margin-left: auto;
+      border-left: none;
+    }
+
+    /* Mensagem do visitante - Cinza suave */
+    .chat-message.visitor {
+      background: #f0f0f0;
+      color: #333;
+      margin-left: 0;
+      border-left: none;
+    }
+
+    .chat-message.owner strong,
+    .chat-message.owner .timestamp {
+      color: rgba(255, 255, 255, 0.95);
+    }
+
+    .chat-message.visitor strong {
+      color: #D96704;
+    }
+
+    .chat-message strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .chat-message .timestamp {
+      font-size: 0.75rem;
+      display: block;
+      margin-bottom: 4px;
+      opacity: 0.8;
+    }
+
+    .chat-message .message-text {
+      margin: 4px 0;
+      line-height: 1.4;
+    }
+
+    .chat-message .message-image {
+      max-width: 100%;
+      max-height: 300px;
+      margin-top: 8px;
+      border-radius: 12px;
+      border: 2px solid rgba(217, 103, 4, 0.2);
+    }
+
+    /* Chat form */
+    .chat-form {
+      padding: 0;
+      margin: 0;
+    }
+
+    .message-input-wrapper {
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #fff;
+      border: 2px solid #D96704;
+      border-radius: 24px;
+    }
+
+    .image-preview-wrapper {
+      padding: 12px;
+      background: #f9f9f9;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+    }
+
+    .image-preview-container {
+      position: relative;
+      display: inline-block;
+      max-width: 150px;
+    }
+
+    .image-preview {
+      max-width: 150px;
+      max-height: 150px;
+      border-radius: 8px;
+      display: block;
+    }
+
+    .remove-image-btn {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      width: 32px;
+      height: 32px;
+      background: #D96704;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .remove-image-btn:hover {
+      background: #E87E2F;
+      transform: scale(1.1);
+    }
+
+    .textarea-wrapper {
+      flex: 1;
+    }
+
+    .chat-form textarea {
+      resize: none;
+      min-height: 36px;
+      max-height: 150px;
+      overflow-y: auto;
+      padding: 8px 0;
+      border: none;
+      background: transparent;
+      font-size: 0.95rem;
+      font-family: inherit;
+      outline: none;
+    }
+
+    .chat-form textarea::placeholder {
+      color: #bbb;
+    }
+
+    .attach-btn,
+    .send-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.2rem;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+      color: #D96704;
+    }
+
+    .attach-btn:hover {
+      background: rgba(217, 103, 4, 0.1);
+      color: #E87E2F;
+    }
+
+    .send-btn {
+      color: #D96704;
+      font-weight: bold;
+    }
+
+    .send-btn:hover {
+      background: rgba(217, 103, 4, 0.1);
+      color: #E87E2F;
+      transform: scale(1.1);
+    }
+
+    /* Scrollbar styling */
+    .chat-box::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .chat-box::-webkit-scrollbar-track {
+      background: rgba(217, 103, 4, 0.05);
+      border-radius: 10px;
+    }
+
+    .chat-box::-webkit-scrollbar-thumb {
+      background: #D96704;
+      border-radius: 10px;
+    }
+
+    .chat-box::-webkit-scrollbar-thumb:hover {
+      background: #E87E2F;
+    }
+  </style>
+
+  {% if messages_url %}
+    <script>
+      (function(){
+        const chatBox = document.getElementById('chat-box');
+        const form = document.getElementById('msg-form');
+        const attachBtn = document.getElementById('attach-btn');
+        
+        if (!chatBox || !form) return;
+        
+        const messagesUrl = chatBox.dataset.messagesUrl;
+        const postUrl = form.dataset.postUrl;
+        const currentUserId = parseInt(chatBox.dataset.currentUser);
+        const donorId = parseInt(chatBox.dataset.donorId);
+        
+        if (!messagesUrl || !postUrl) return;
+
+        const emptyText = chatBox.dataset.emptyText || '';
+        const textarea = form.querySelector('textarea');
+        const imageInput = document.getElementById('image-input');
+        const previewWrapper = document.getElementById('image-preview');
+        const previewImg = document.getElementById('preview-img');
+        const removeImageBtn = document.getElementById('remove-image-btn');
+
+        // Auto-grow textarea conforme texto é digitado
+        if (textarea) {
+          textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 200) + 'px';
+          });
+        }
+
+        // Mostrar preview quando arquivo é selecionado
+        imageInput.addEventListener('change', function() {
+          if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+              previewImg.src = e.target.result;
+              previewWrapper.style.display = 'block';
+            };
+            reader.readAsDataURL(this.files[0]);
+          }
+        });
+
+        // Remover imagem selecionada
+        removeImageBtn.addEventListener('click', function() {
+          imageInput.value = '';
+          previewWrapper.style.display = 'none';
+          previewImg.src = '';
+        });
+
+        function escapeHtml(text) {
+          return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        }
+
+        async function loadMessages() {
+          try {
+            const res = await fetch(messagesUrl, { credentials: 'same-origin' });
+            const data = await res.json();
+            const list = data.messages || [];
+            chatBox.innerHTML = '';
+            if (!list.length) {
+              chatBox.innerHTML = `<p class="text-muted">${emptyText}</p>`;
+              return;
+            }
+            list.forEach((msg) => {
+              const wrapper = document.createElement('div');
+              wrapper.className = 'chat-message';
+              
+              // Determine if message is from owner or visitor
+              if (msg.sender_id === donorId) {
+                wrapper.classList.add('owner');
+              } else {
+                wrapper.classList.add('visitor');
+              }
+              
+              const created = new Date(msg.created_at).toLocaleString('pt-BR');
+              wrapper.innerHTML = `
+                <strong>${escapeHtml(msg.sender)}</strong>
+                <span class="timestamp">${created}</span>
+                <div class="message-text">${escapeHtml(msg.text)}</div>
+              `;
+              
+              // Add image if exists
+              if (msg.image) {
+                const img = document.createElement('img');
+                img.src = msg.image;
+                img.className = 'message-image';
+                img.alt = 'Imagem da mensagem';
+                wrapper.appendChild(img);
+              }
+              
+              chatBox.appendChild(wrapper);
+            });
+            chatBox.scrollTop = chatBox.scrollHeight;
+          } catch (err) {
+            console.error(err);
+          }
+        }
+
+        function getCookie(name) {
+          const value = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+          return value ? value.pop() : '';
+        }
+
+        form.addEventListener('submit', async function (event) {
+          event.preventDefault();
+          const text = textarea.value.trim();
+          const hasImage = imageInput && imageInput.files && imageInput.files.length > 0;
+          
+          if (!text && !hasImage) {
+            alert('Escreva uma mensagem ou anexe uma imagem.');
+            return;
+          }
+
+          const formData = new FormData(form);
+          try {
+            const res = await fetch(postUrl, {
+              method: 'POST',
+              credentials: 'same-origin',
+              body: formData,
+            });
+            if (res.ok) {
+              textarea.value = '';
+              if (imageInput) {
+                imageInput.value = '';
+              }
+              previewWrapper.style.display = 'none';
+              previewImg.src = '';
+              loadMessages();
+            } else {
+              const errorData = await res.json().catch(() => ({}));
+              alert('Erro ao enviar mensagem: ' + (errorData.error || 'Erro desconhecido'));
+              console.error('Erro na resposta:', errorData);
+            }
+          } catch (err) {
+            console.error(err);
+            alert('Erro ao enviar mensagem.');
+          }
+        });
+
+        // Send message with Enter key (not Ctrl+Enter)
+        textarea.addEventListener('keydown', function (event) {
+          if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            form.dispatchEvent(new Event('submit'));
+          }
+        });
+
+        // Attach button to focus file input
+        attachBtn.addEventListener('click', function () {
+          imageInput.click();
+        });
+
+        // Load messages every 3 seconds
+        loadMessages();
+        setInterval(loadMessages, 3000);
+      })();
+    </script>
+  {% endif %}
+  </div>
+  </div>
+{% endblock %}

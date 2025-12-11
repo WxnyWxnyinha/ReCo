@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
+        .header { background: #007bff; color: white; padding: 20px; border-radius: 5px 5px 0 0; text-align: center; }
+        .content { background: white; padding: 20px; }
+        .footer { text-align: center; padding: 10px; font-size: 12px; color: #777; }
+        .button { display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎉 Sua doação foi aprovada!</h1>
+        </div>
+        <div class="content">
+            <p>Olá <strong>{{ donor_name }}</strong>,</p>
+            
+            <p>Temos o prazer de informar que sua doação foi <strong>aprovada</strong>!</p>
+            
+            <h3>Detalhes da Doação:</h3>
+            <ul>
+                <li><strong>Produto:</strong> {{ donation_title }}</li>
+                <li><strong>Status:</strong> {{ status }}</li>
+                <li><strong>ID da Doação:</strong> #{{ donation_id }}</li>
+            </ul>
+            
+            <p>Em breve, um de nossos voluntários entrará em contato com você para agendar a coleta ou a entrega em ponto de coleta.</p>
+            
+            <p>Você pode acompanhar o status completo da sua doação no painel:</p>
+            <a href="http://127.0.0.1:8000/doacoes/{{ donation_id }}/" class="button">Ver Detalhes da Doação</a>
+            
+            <p>Obrigado por fazer parte da ReCo! Juntos estamos promovendo a inclusão digital e preservando o meio ambiente.</p>
+            
+            <p>Atenciosamente,<br><strong>Equipe ReCo</strong></p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 ReCo - Reutilizar e Conectar. Todos os direitos reservados.</p>
+        </div>
+    </div>
+</body>
+</html>

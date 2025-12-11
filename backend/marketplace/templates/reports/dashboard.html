@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Relatórios - ReCo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-2">Relatórios e Análises</h2>
+            <p class="text-muted">{{ period_name }}</p>
+        </div>
+        <div class="col-md-4 text-end d-flex justify-content-end gap-2 flex-wrap">
+            <a href="{% url 'doacoes:reports_export_donations' %}?period={{ period }}" class="btn btn-outline-primary">
+                <i class="fas fa-file-excel"></i> Exportar Doações (Excel)
+            </a>
+            <a href="{% url 'doacoes:reports_export_impact' %}?period={{ period }}" class="btn btn-outline-success">
+                <i class="fas fa-file-pdf"></i> Impacto (PDF)
+            </a>
+            <a href="{% url 'doacoes:admin_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtro de Período -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-10">
+                    <label for="period" class="form-label">Selecionar Período</label>
+                    <select class="form-select" id="period" name="period">
+                        <option value="7" {% if period == '7' %}selected{% endif %}>Últimos 7 dias</option>
+                        <option value="30" {% if period == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                        <option value="90" {% if period == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                        <option value="365" {% if period == '365' %}selected{% endif %}>Último ano</option>
+                        <option value="all" {% if period == 'all' %}selected{% endif %}>Todo o período</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Aplicar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas Principais -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-primary h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-box fa-2x text-primary"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-primary h3 mb-0">{{ stats.total_donations }}</div>
+                            <small class="text-muted">Total de Doações</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-success h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-success h3 mb-0">{{ stats.total_delivered }}</div>
+                            <small class="text-muted">Entregas Concluídas</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-info h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-info"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-info h3 mb-0">{{ stats.unique_beneficiaries }}</div>
+                            <small class="text-muted">Beneficiários Únicos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card border-left-warning h-100">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <i class="fas fa-heart fa-2x text-warning"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-warning h3 mb-0">{{ stats.unique_donors }}</div>
+                            <small class="text-muted">Doadores Únicos</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Taxas e Métricas -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie"></i> Taxa de Aprovação</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ stats.approval_rate }}%">
+                            {{ stats.approval_rate }}%
+                        </div>
+                    </div>
+                    <p class="text-muted">{{ stats.total_approved }} aprovadas de {{ stats.total_donations }} total</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-truck"></i> Taxa de Entrega</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="progress mb-3" style="height: 25px;">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ stats.delivery_rate }}%">
+                            {{ stats.delivery_rate }}%
+                        </div>
+                    </div>
+                    <p class="text-muted">{{ stats.total_delivered }} entregues de {{ stats.total_approved }} aprovadas</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Impacto Ambiental -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-leaf"></i> Impacto Ambiental</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <div class="bg-light p-3 rounded">
+                                <h3 class="text-success mb-1">{{ impact.estimated_kg }} kg</h3>
+                                <small class="text-muted">Resíduos Eletrônicos Reutilizados</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="bg-light p-3 rounded">
+                                <h3 class="text-success mb-1">{{ impact.estimated_co2|floatformat:0 }} kg</h3>
+                                <small class="text-muted">CO₂ Evitado</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="bg-light p-3 rounded">
+                                <h3 class="text-success mb-1">{{ impact.estimated_energy|floatformat:0 }} kWh</h3>
+                                <small class="text-muted">Energia Economizada</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <!-- Doações por Condição -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-cogs"></i> Doações por Condição</h5>
+                </div>
+                <div class="card-body">
+                    {% if donations_by_condition %}
+                        <canvas id="conditionChart" height="200"></canvas>
+                    {% else %}
+                        <p class="text-center text-muted">Sem dados para exibir</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Doações por Status -->
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-tasks"></i> Doações por Status</h5>
+                </div>
+                <div class="card-body">
+                    {% if donations_by_status %}
+                        <canvas id="statusChart" height="200"></canvas>
+                    {% else %}
+                        <p class="text-center text-muted">Sem dados para exibir</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Links para Relatórios Detalhados -->
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'doacoes:reports_donations' %}?period={{ period }}" class="text-decoration-none">
+                <div class="card hover-card border-primary">
+                    <div class="card-body text-center">
+                        <i class="fas fa-box fa-3x text-primary mb-3"></i>
+                        <h5>Relatório de Doações</h5>
+                        <p class="text-muted">Análise detalhada de todas as doações</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'doacoes:reports_impact' %}?period={{ period }}" class="text-decoration-none">
+                <div class="card hover-card border-success">
+                    <div class="card-body text-center">
+                        <i class="fas fa-leaf fa-3x text-success mb-3"></i>
+                        <h5>Relatório de Impacto</h5>
+                        <p class="text-muted">Métricas ambientais e sustentabilidade</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'doacoes:reports_beneficiaries' %}?period={{ period }}" class="text-decoration-none">
+                <div class="card hover-card border-info">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-3x text-info mb-3"></i>
+                        <h5>Relatório de Beneficiários</h5>
+                        <p class="text-muted">Análise de beneficiários e solicitações</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 4px solid #0d6efd !important;
+}
+.border-left-success {
+    border-left: 4px solid #198754 !important;
+}
+.border-left-info {
+    border-left: 4px solid #0dcaf0 !important;
+}
+.border-left-warning {
+    border-left: 4px solid #ffc107 !important;
+}
+.hover-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.hover-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// Mapeamento de condições
+const conditionMap = {
+    'novo': 'Novo',
+    'muito_bom': 'Muito Bom',
+    'bom': 'Bom',
+    'precisa_reparo': 'Precisa de Reparo'
+};
+
+// Doações por Condição
+{% if donations_by_condition %}
+const conditionCtx = document.getElementById('conditionChart');
+const conditionLabels = {{ donations_by_condition|safe }}.map(item => conditionMap[item.condition] || item.condition);
+const conditionData = {{ donations_by_condition|safe }}.map(item => item.count);
+new Chart(conditionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: conditionLabels,
+        datasets: [{
+            data: conditionData,
+            backgroundColor: [
+                'rgba(25, 135, 84, 0.7)',
+                'rgba(255, 193, 7, 0.7)',
+                'rgba(220, 53, 69, 0.7)',
+                'rgba(13, 202, 240, 0.7)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endif %}
+
+// Mapeamento de status
+const statusMap = {
+    'pendente': 'Pendente',
+    'aprovada': 'Aprovada',
+    'entregue': 'Entregue',
+    'rejeitada': 'Rejeitada'
+};
+
+// Doações por Status
+{% if donations_by_status %}
+const statusCtx = document.getElementById('statusChart');
+const statusLabels = {{ donations_by_status|safe }}.map(item => statusMap[item.status] || item.status);
+const statusData = {{ donations_by_status|safe }}.map(item => item.count);
+new Chart(statusCtx, {
+    type: 'pie',
+    data: {
+        labels: statusLabels,
+        datasets: [{
+            data: statusData,
+            backgroundColor: [
+                'rgba(255, 193, 7, 0.7)',
+                'rgba(25, 135, 84, 0.7)',
+                'rgba(13, 202, 240, 0.7)',
+                'rgba(108, 117, 125, 0.7)',
+                'rgba(220, 53, 69, 0.7)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

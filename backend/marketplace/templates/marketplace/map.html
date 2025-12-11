@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mapa de Pontos de Coleta - ReCo{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+    #map {
+        height: 600px;
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .point-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .point-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .leaflet-popup-content {
+        font-size: 14px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-2"><i class="fas fa-map-marked-alt text-primary"></i> Pontos de Coleta</h2>
+            <p class="text-muted">Encontre o ponto de coleta mais próximo de você</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if user.is_staff %}
+                <a href="{% url 'doacoes:admin_collection_points' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-cog"></i> Gerenciar
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="searchLocation" class="form-label">Buscar por localização</label>
+                    <input type="text" class="form-control" id="searchLocation" placeholder="Digite um endereço, CEP ou cidade...">
+                </div>
+                <div class="col-md-3">
+                    <label for="filterRadius" class="form-label">Raio (km)</label>
+                    <select class="form-select" id="filterRadius">
+                        <option value="5">5 km</option>
+                        <option value="10" selected>10 km</option>
+                        <option value="20">20 km</option>
+                        <option value="50">50 km</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="button" class="btn btn-primary w-100" onclick="searchNearby()">
+                        <i class="fas fa-search"></i> Buscar Próximos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapa e Lista -->
+    <div class="row">
+        <!-- Mapa -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-map"></i> Mapa Interativo</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div id="map"></div>
+                </div>
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> Clique nos marcadores para ver detalhes
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Pontos -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="fas fa-list"></i> Pontos Disponíveis</h5>
+                    <span class="badge bg-primary">{{ points|length }}</span>
+                </div>
+                <div class="list-group list-group-flush" style="max-height: 600px; overflow-y: auto;" id="pointsList">
+                    {% for point in points %}
+                        <div class="list-group-item point-card" data-lat="{{ point.latitude }}" data-lng="{{ point.longitude }}" 
+                             onclick="focusPoint({{ point.latitude }}, {{ point.longitude }}, {{ point.id }})">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">
+                                        <i class="fas fa-map-marker-alt text-danger"></i>
+                                        {{ point.name }}
+                                    </h6>
+                                    <p class="mb-1 text-muted small">
+                                        <i class="fas fa-map-pin"></i> {{ point.address }}
+                                    </p>
+                                    {% if point.opening_hours %}
+                                        <p class="mb-1 text-muted small">
+                                            <i class="fas fa-clock"></i> {{ point.opening_hours }}
+                                        </p>
+                                    {% endif %}
+                                    {% if point.contact_phone %}
+                                        <p class="mb-1 text-muted small">
+                                            <i class="fas fa-phone"></i> {{ point.contact_phone }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                                {% if point.is_active %}
+                                    <span class="badge bg-success">Ativo</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inativo</span>
+                                {% endif %}
+                            </div>
+                            
+                            {% if point.capacity %}
+                                <div class="progress mt-2" style="height: 6px;">
+                                    {% widthratio point.current_inventory|default:0 point.capacity 100 as occupation_pct %}
+                                    <div class="progress-bar {% if occupation_pct|floatformat:0 > 80 %}bg-danger{% elif occupation_pct|floatformat:0 > 50 %}bg-warning{% else %}bg-success{% endif %}" 
+                                         role="progressbar" style="width: {{ occupation_pct|floatformat:0 }}%">
+                                    </div>
+                                </div>
+                                <small class="text-muted">Ocupação: {{ point.current_inventory|default:0 }}/{{ point.capacity }}</small>
+                            {% endif %}
+                        </div>
+                    {% empty %}
+                        <div class="list-group-item text-center text-muted py-4">
+                            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                            Nenhum ponto de coleta cadastrado
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let map;
+let markers = [];
+let circleRadius = null;
+
+// Dados dos pontos de coleta
+const collectionPoints = [
+    {% for point in points %}
+    {
+        id: {{ point.id }},
+        name: "{{ point.name|escapejs }}",
+        address: "{{ point.address|escapejs }}",
+        lat: {{ point.latitude }},
+        lng: {{ point.longitude }},
+        phone: "{{ point.contact_phone|default:''|escapejs }}",
+        hours: "{{ point.opening_hours|default:''|escapejs }}",
+        capacity: {{ point.capacity|default:0 }},
+        current: {{ point.current_inventory|default:0 }},
+        isActive: {{ point.is_active|yesno:"true,false" }}
+    },
+    {% endfor %}
+];
+
+function initMap() {
+    // Centro padrão (Brasília, Brasil)
+    const defaultCenter = [-15.7939, -47.8822];
+    
+    // Criar mapa
+    map = L.map('map').setView(defaultCenter, 11);
+    
+    // Adicionar OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+
+    // Adicionar marcadores
+    collectionPoints.forEach(point => {
+        addMarker(point);
+    });
+
+    // Ajustar zoom para mostrar todos os pontos
+    if (collectionPoints.length > 0) {
+        const group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
+
+    // Tentar obter localização do usuário
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            position => {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                
+                // Marcador azul do usuário
+                L.circleMarker([userLat, userLng], {
+                    radius: 8,
+                    fillColor: '#4285F4',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map).bindPopup('Sua Localização');
+                
+                map.setView([userLat, userLng], 13);
+            },
+            () => {
+                console.log('Geolocalização negada pelo usuário');
+            }
+        );
+    }
+}
+
+function addMarker(point) {
+    const markerColor = point.isActive ? '#d96704' : '#999999';
+    
+    const marker = L.circleMarker([point.lat, point.lng], {
+        radius: 8,
+        fillColor: markerColor,
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8
+    }).addTo(map);
+
+    const popupContent = `
+        <div style="max-width: 300px; font-size: 13px;">
+            <h6 style="margin-bottom: 8px;"><strong>${point.name}</strong></h6>
+            <p style="margin-bottom: 6px;"><i class="fas fa-map-pin"></i> <small>${point.address}</small></p>
+            ${point.hours ? `<p style="margin-bottom: 6px;"><i class="fas fa-clock"></i> <small>${point.hours}</small></p>` : ''}
+            ${point.phone ? `<p style="margin-bottom: 6px;"><i class="fas fa-phone"></i> <small>${point.phone}</small></p>` : ''}
+            ${point.capacity ? `
+                <div style="margin-bottom: 8px;">
+                    <small>Ocupação: ${point.current}/${point.capacity} itens</small>
+                    <div class="progress" style="height: 6px; margin-top: 4px;">
+                        <div class="progress-bar ${point.current/point.capacity > 0.8 ? 'bg-danger' : (point.current/point.capacity > 0.5 ? 'bg-warning' : 'bg-success')}" 
+                             style="width: ${(point.current/point.capacity)*100}%"></div>
+                    </div>
+                </div>
+            ` : ''}
+            <a href="https://www.openstreetmap.org/directions?engine=osrm_car&route=${point.lat}%2C${point.lng}" 
+               target="_blank" class="btn btn-sm btn-primary" style="margin-top: 8px;">
+                <i class="fas fa-directions"></i> Como Chegar
+            </a>
+        </div>
+    `;
+
+    marker.bindPopup(popupContent);
+    markers.push(marker);
+}
+
+function focusPoint(lat, lng, id) {
+    map.setView([lat, lng], 15);
+    
+    // Abrir popup do marcador correspondente
+    const markerIndex = collectionPoints.findIndex(p => p.id === id);
+    if (markerIndex !== -1) {
+        markers[markerIndex].openPopup();
+    }
+}
+
+function searchNearby() {
+    const location = document.getElementById('searchLocation').value;
+    const radius = parseFloat(document.getElementById('filterRadius').value);
+    
+    if (!location) {
+        alert('Digite uma localização para buscar');
+        return;
+    }
+    
+    // Usar Nominatim (OpenStreetMap geocoding)
+    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(location)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length > 0) {
+                const result = data[0];
+                const lat = parseFloat(result.lat);
+                const lng = parseFloat(result.lon);
+                
+                map.setView([lat, lng], 13);
+                
+                // Marcador da busca (vermelho)
+                L.circleMarker([lat, lng], {
+                    radius: 8,
+                    fillColor: '#FF0000',
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map).bindPopup('Localização Pesquisada');
+                
+                // Círculo do raio
+                if (circleRadius) map.removeLayer(circleRadius);
+                circleRadius = L.circle([lat, lng], {
+                    radius: radius * 1000,
+                    color: '#0d6efd',
+                    weight: 2,
+                    opacity: 0.8,
+                    fillColor: '#0d6efd',
+                    fillOpacity: 0.15
+                }).addTo(map);
+                
+            } else {
+                alert('Localização não encontrada. Tente outro endereço.');
+            }
+        })
+        .catch(err => {
+            console.error('Erro ao buscar localização:', err);
+            alert('Erro ao buscar localização. Tente novamente.');
+        });
+}
+
+// Inicializar mapa quando página carregar
+document.addEventListener('DOMContentLoaded', initMap);
+</script>
+{% endblock %}

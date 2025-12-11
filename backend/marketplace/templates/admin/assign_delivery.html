@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Atribuir Entrega - ReCo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="container d-flex flex-column gap-4">
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-truck"></i> Atribuir Transportador
+                </h4>
+            </div>
+            
+            <div class="card-body">
+                <!-- Informações da Doação -->
+                <div class="alert alert-info" role="alert">
+                    <h5 class="alert-heading">Doação</h5>
+                    <p class="mb-1"><strong>{{ donation.title }}</strong></p>
+                    <p class="text-muted mb-0">{{ donation.description|truncatewords:15 }}</p>
+                </div>
+
+                    {% if drivers %}
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label for="driver_id" class="form-label">Selecione um Transportador</label>
+                                <select class="form-select form-select-lg" id="driver_id" name="driver_id" required>
+                                    <option value="">-- Escolha um transportador --</option>
+                                    {% for driver in drivers %}
+                                        <option value="{{ driver.pk }}">
+                                            {{ driver.user.get_full_name|default:driver.user.username }}
+                                            {% if driver.vehicle_type %}
+                                                - {{ driver.get_vehicle_type_display }}
+                                            {% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Selecione um transportador.
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-check"></i> Atribuir Transportador
+                                </button>
+                                <a href="{% url 'doacoes:admin_deliveries_management' %}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <h6 class="mb-3">Transportadores Disponíveis</h6>
+                        <div class="list-group list-group-sm">
+                            {% for driver in drivers %}
+                                <div class="list-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ driver.user.get_full_name|default:driver.user.username }}</h6>
+                                            <small class="text-muted">
+                                                {% if driver.vehicle_type %}
+                                                    <i class="fas fa-van-shuttle"></i> {{ driver.get_vehicle_type_display }}
+                                                {% endif %}
+                                                {% if driver.max_items_capacity %}
+                                                    | Capacidade: {{ driver.max_items_capacity }} itens
+                                                {% endif %}
+                                            </small>
+                                        </div>
+                                        {% if driver.is_available %}
+                                            <span class="badge bg-success">Disponível</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Indisponível</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                {% else %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Nenhum transportador disponível!</strong>
+                        <p class="mb-0 mt-2">Não há transportadores disponíveis no momento. Verifique se há transportadores cadastrados e ativados.</p>
+                    </div>
+                    <a href="{% url 'doacoes:admin_deliveries_management' %}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-arrow-left"></i> Voltar
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Validação do formulário
+    (function() {
+        'use strict';
+        window.addEventListener('load', function() {
+            var forms = document.querySelectorAll('.needs-validation');
+            var validation = Array.prototype.filter.call(forms, function(form) {
+                form.addEventListener('submit', function(event) {
+                    if (form.checkValidity() === false) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        }, false);
+    })();
+</script>
+{% endblock %}

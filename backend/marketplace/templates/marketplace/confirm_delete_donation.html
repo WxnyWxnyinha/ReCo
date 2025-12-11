@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}Confirmar Exclusão — ReCo{% endblock %}
+
+{% block content %}
+  <div class="container-fluid mt-4">
+  <div class="container d-flex flex-column gap-4">
+    <section class="form-card text-center">
+      <i class="fas fa-trash-alt" style="font-size: 3rem; color: #dc3545; margin-bottom: 1rem; display: block;"></i>
+      <h1 class="h3 mb-2">Excluir Doação?</h1>
+      <p class="text-muted mb-4">
+        Você tem certeza que deseja remover a doação "<strong>{{ donation.title }}</strong>"? 
+        Esta ação não pode ser desfeita.
+      </p>
+
+      <div class="alert alert-warning" role="alert">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        <strong>Aviso:</strong> Se houver solicitações pendentes desta doação, elas também serão removidas.
+      </div>
+
+      <form method="post" action="{% url 'doacoes:delete_donation' donation.pk %}" class="d-inline">
+        {% csrf_token %}
+        <button class="btn btn-danger btn-lg me-2" type="submit">
+          <i class="fas fa-trash me-2"></i>Sim, excluir
+        </button>
+        <a class="btn btn-outline-secondary btn-lg" href="{% url 'doacoes:detail' donation.pk %}">
+          <i class="fas fa-times me-2"></i>Cancelar
+        </a>
+      </form>
+    </section>
+  </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
+        .header { background: #28a745; color: white; padding: 20px; border-radius: 5px 5px 0 0; text-align: center; }
+        .content { background: white; padding: 20px; }
+        .footer { text-align: center; padding: 10px; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>✅ Sua solicitação foi aprovada!</h1>
+        </div>
+        <div class="content">
+            <p>Olá <strong>{{ beneficiary_name }}</strong>,</p>
+            <p>Temos o prazer de informar que sua solicitação de doação foi <strong>aprovada</strong>!</p>
+            <h3>Detalhes:</h3>
+            <ul>
+                <li><strong>Item:</strong> {{ donation_title }}</li>
+                <li><strong>Condição:</strong> {{ donation_condition }}</li>
+            </ul>
+            <p>Você em breve receberá mais informações sobre a entrega. Acompanhe o status aqui:</p>
+            <a href="http://127.0.0.1:8000/doacoes/{{ donation_id }}/" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Ver Detalhes</a>
+            <p>Obrigado!<br><strong>Equipe ReCo</strong></p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 ReCo - Reutilizar e Conectar</p>
+        </div>
+    </div>
+</body>
+</html>

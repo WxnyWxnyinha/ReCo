@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Contato — {{ donation.title }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <h1>Contato sobre: {{ donation.title }}</h1>
+  <p class="text-muted">Anunciado por {{ donation.donor.username }}</p>
+
+  <form method="post" action="">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label">Sua mensagem</label>
+      <textarea name="message" class="form-control" rows="6" required>Olá — tenho interesse na doação "{{ donation.title }}".</textarea>
+    </div>
+
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">Enviar mensagem</button>
+      <a class="btn btn-outline-secondary" href="{% url 'doacoes:detail' donation.pk %}">Voltar</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+  {{ block.super }}
+  <script>
+    // filepath: [urls.py](http://_vscodecontentref_/1)
+    // ...existing code...
+    from django.conf import settings
+    from django.conf.urls.static import static
+
+    urlpatterns = [
+        // ... suas rotas ...
+    ]
+
+    // Servir media apenas em dev
+    if (settings.DEBUG) {
+        urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    }
+  </script>
+{% endblock %}
+
+{% block extra_content %}
+  <div class="container my-4">
+    <h2>Informações Adicionais</h2>
+    <p>Para garantir que as imagens sejam exibidas corretamente, siga estas instruções:</p>
+    <ol>
+      <li>No template, use a propriedade <code>.url</code> do FileField: <code>&lt;img src="{{ donation.image.url }}" alt="..."&gt;</code></li>
+      <li>Confirme que o model tem FileField/ImageField e upload_to. Ex.: <code>image = models.ImageField(upload_to='donations/', null=True, blank=True)</code></li>
+    </ol>
+
+    <h3>Teste local</h3>
+    <p>Ative o venv e rode os seguintes comandos:</p>
+    <pre><code>. [Activate.ps1](http://_vscodecontentref_/2)
+python [manage.py](http://_vscodecontentref_/3) migrate
+python [manage.py](http://_vscodecontentref_/4) runserver</code></pre>
+    <p>Faça upload via site/admin e abra: <a href="http://127.0.0.1:8000/media/donations/nome.jpg">http://127.0.0.1:8000/media/donations/nome.jpg</a></p>
+
+    <h3>No PythonAnywhere (passos essenciais)</h3>
+    <p>Rode collectstatic (para static):</p>
+    <pre><code>. ./.venv/bin/activate  # ou [Activate.ps1](http://_vscodecontentref_/5) dependendo do console
+python [manage.py](http://_vscodecontentref_/6) collectstatic</code></pre>
+    <p>No Dashboard → Web → Static files:</p>
+    <ul>
+      <li>Adicione mapeamento: URL: /media/  Path: /home/SEU_USUARIO/caminho/para/repo/media</li>
+      <li>(Se usar STATIC_ROOT) adicione URL: /static/  Path: /home/SEU_USUARIO/caminho/para/repo/staticfiles</li>
+    </ul>
+    <p>Faça upload no site (não suba pela máquina local via SFTP; uploads feitos via app aparecem em MEDIA_ROOT no filesystem do PythonAnywhere).</p>
+    <p>Verifique permissões: arquivos em /home/SEU_USUARIO/... normalmente já acessíveis.</p>
+    <p>Veja logs (Web → Logs) — access.log e error.log — para ver a URL que falhou.</p>
+
+    <h3>Verificações rápidas se ainda falhar</h3>
+    <ul>
+      <li>Abra diretamente em browser: <a href="https://SEU_USUARIO.pythonanywhere.com/media/caminho/arquivo.jpg">https://SEU_USUARIO.pythonanywhere.com/media/caminho/arquivo.jpg</a> — se 404, path incorreto no mapeamento.</li>
+      <li>Confirme que DEBUG=False no PythonAnywhere não impede o mapeamento (PythonAnywhere serve static/media conforme mapeamento do Web tab, mesmo com DEBUG False).</li>
+      <li>Confirme que o campo usado no template realmente contém um arquivo ({{ donation.image }} e {{ donation.image.url }}).</li>
+    </ul>
+
+    <h3>Logs e exemplos</h3>
+    <p>Se quiser eu gero os comandos exatos para o seu deploy no PythonAnywhere — me passe:</p>
+    <ul>
+      <li>nome de usuário PythonAnywhere (ou confirme que quer instruções genéricas)</li>
+      <li>localização do projeto no servidor (ex: /home/usuario/CSS_ReCo)</li>
+    </ul>
+    <p>Se quiser, executo as mudanças nos arquivos acima (settings.py / urls.py) e mostro exatamente o que salvar.</p>
+  </div>
+{% endblock %}

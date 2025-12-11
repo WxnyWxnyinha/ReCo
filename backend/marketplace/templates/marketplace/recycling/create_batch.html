@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Novo Lote de Reciclagem{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+<div class="container d-flex flex-column gap-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h1 class="h3 mb-1">Novo lote</h1>
+      <p class="text-muted mb-0">Selecione um parceiro e os itens para envio.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'doacoes:recycling_dashboard' %}">Voltar</a>
+  </div>
+
+  <form method="post" class="card shadow-sm">
+    {% csrf_token %}
+    <div class="card-body d-flex flex-column gap-4">
+      <div>
+        <label class="form-label">Parceiro de reciclagem</label>
+        <select class="form-select" name="partner" required>
+          <option value="" disabled selected>Selecione...</option>
+          {% for partner in partners %}
+            <option value="{{ partner.pk }}">{{ partner.company_name }} — {{ partner.max_monthly_capacity_kg }} kg/mês</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label">Itens para reciclar</label>
+        {% if items %}
+        <div class="list-group list-group-flush border rounded">
+          {% for item in items %}
+            <label class="list-group-item d-flex align-items-start gap-3">
+              <input class="form-check-input mt-1" type="checkbox" name="items" value="{{ item.pk }}">
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center">
+                  <strong>{{ item.title }}</strong>
+                  <span class="badge bg-secondary">{{ item.get_condition_display }}</span>
+                </div>
+                <small class="text-muted">{{ item.city|default:"Cidade não informada" }} • {{ item.created_at|date:'d/m/Y' }}</small>
+              </div>
+            </label>
+          {% endfor %}
+        </div>
+        {% else %}
+          <p class="text-muted mb-0">Não há itens marcados para reciclagem.</p>
+        {% endif %}
+      </div>
+
+      <div>
+        <label class="form-label">Observações</label>
+        <textarea class="form-control" name="notes" rows="3" placeholder="Observações sobre transporte, separação ou requisitos do parceiro."></textarea>
+      </div>
+    </div>
+    <div class="card-footer text-end bg-white">
+      <button class="btn btn-primary" type="submit" {% if not items %}disabled{% endif %}>Criar lote</button>
+    </div>
+  </form>
+</div>
+</div>
+{% endblock %}

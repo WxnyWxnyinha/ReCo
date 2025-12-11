@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Entrega #{{ delivery.pk }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+    <div>
+      <h1 class="h4 mb-1">Entrega de {{ delivery.donation.title }}</h1>
+      <p class="text-muted mb-0">Status: <span class="badge bg-secondary">{{ delivery.get_status_display }}</span></p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'doacoes:driver_dashboard' %}">Voltar</a>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="mb-3">Detalhes</h5>
+      <ul class="list-unstyled mb-0 small">
+        <li><strong>Doador:</strong> {{ delivery.donation.donor.get_full_name|default:delivery.donation.donor.username }}</li>
+        <li><strong>Condição:</strong> {{ delivery.donation.get_condition_display }}</li>
+        <li><strong>Contato:</strong> {{ delivery.donation.contact_phone }} / {{ delivery.donation.contact_email }}</li>
+        {% if beneficiary_request %}
+        <li><strong>Beneficiário:</strong> {{ beneficiary_request.beneficiary.get_full_name|default:beneficiary_request.beneficiary.username }}</li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="mb-3">Atualizar status</h5>
+      <form method="post" action="{% url 'doacoes:driver_update_delivery_status' delivery.pk %}" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-4">
+          <label class="form-label">Novo status</label>
+          <select class="form-select" name="status" required>
+            <option value="" selected disabled>Selecione</option>
+            <option value="coletada">Coletada</option>
+            <option value="em_transito">Em trânsito</option>
+            <option value="entregue">Entregue</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Latitude</label>
+          <input class="form-control" type="text" name="latitude" placeholder="opcional">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Longitude</label>
+          <input class="form-control" type="text" name="longitude" placeholder="opcional">
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-primary" type="submit">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="mb-3">Comprovante</h5>
+      <form method="post" action="{% url 'doacoes:driver_upload_proof' delivery.pk %}" enctype="multipart/form-data" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-6">
+          <label class="form-label">Foto do comprovante</label>
+          <input class="form-control" type="file" name="proof_image" accept="image/*">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Assinatura</label>
+          <input class="form-control" type="file" name="signature_image" accept="image/*">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" name="notes" rows="2">{{ delivery.notes }}</textarea>
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-outline-primary" type="submit">Enviar comprovante</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

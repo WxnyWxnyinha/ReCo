@@ -1,0 +1,227 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalhes da Solicitação - ReCo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+<div class="container d-flex flex-column gap-4">
+    <!-- Card Principal -->
+    <div class="card mb-4">
+        <!-- Header com Status -->
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-0">Detalhes da Solicitação</h3>
+                </div>
+                <div>
+                    {% if donation_request.status == 'pendente' %}
+                        <span class="badge bg-warning">Pendente</span>
+                    {% elif donation_request.status == 'aprovada' %}
+                        <span class="badge bg-success">Aprovada</span>
+                    {% elif donation_request.status == 'rejeitada' %}
+                        <span class="badge bg-danger">Rejeitada</span>
+                    {% elif donation_request.status == 'entregue' %}
+                        <span class="badge bg-info">Entregue</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <!-- Informações da Doação -->
+            <h5 class="mb-3">Item Solicitado</h5>
+            <div class="row mb-4">
+                <div class="col-md-4">
+                            {% if donation_request.donation.image %}
+                                <img src="{{ donation_request.donation.image.url }}" class="img-fluid rounded" alt="{{ donation_request.donation.title }}">
+                            {% else %}
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 200px;">
+                                    <i class="fas fa-image text-muted" style="font-size: 48px;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h5>{{ donation_request.donation.title }}</h5>
+                            <p class="text-muted">{{ donation_request.donation.description }}</p>
+                            <p>
+                                <strong>Condição:</strong> 
+                                <span class="badge bg-info">{{ donation_request.donation.get_condition_display }}</span>
+                            </p>
+                            <p>
+                                <strong>Doador:</strong> 
+                                {{ donation_request.donation.donor.get_full_name|default:donation_request.donation.donor.username }}
+                            </p>
+                            {% if donation_request.donation.city %}
+                                <p>
+                                    <strong>Local:</strong> {{ donation_request.donation.city }}
+                                </p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Motivo da Solicitação -->
+                    <h5 class="mb-2">Seu Motivo</h5>
+                    <div class="alert alert-light">
+                        <p class="mb-0">{{ donation_request.reason }}</p>
+                    </div>
+
+                    <hr>
+
+                    <!-- Informações de Aprovação/Rejeição -->
+                    {% if donation_request.status == 'rejeitada' %}
+                        <div class="alert alert-danger" role="alert">
+                            <h6 class="alert-heading">Solicitação Rejeitada</h6>
+                            {% if donation_request.rejection_reason %}
+                                <p class="mb-0"><strong>Motivo:</strong> {{ donation_request.rejection_reason }}</p>
+                            {% endif %}
+                            {% if donation_request.approved_by %}
+                                <p class="mb-0"><small>Por: {{ donation_request.approved_by.get_full_name|default:donation_request.approved_by.username }}</small></p>
+                            {% endif %}
+                        </div>
+                    {% elif donation_request.status == 'aprovada' %}
+                        <div class="alert alert-success" role="alert">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-check-circle me-2"></i>Solicitação Aprovada!
+                            </h6>
+                            <p class="mb-0">Sua solicitação foi aprovada! Você receberá em breve informações sobre a entrega.</p>
+                            {% if donation_request.approved_by %}
+                                <p class="mb-0"><small>Aprovado por: {{ donation_request.approved_by.get_full_name|default:donation_request.approved_by.username }}</small></p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Timeline -->
+                    <h5 class="mb-3 mt-4">Histórico</h5>
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <p><strong>Solicitação Criada</strong></p>
+                                <small class="text-muted">{{ donation_request.created_at|date:"d/m/Y à\s H:i" }}</small>
+                            </div>
+                        </div>
+                        {% if donation_request.status != 'pendente' %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker {% if donation_request.status == 'aprovada' or donation_request.status == 'entregue' %}bg-success{% else %}bg-danger{% endif %}"></div>
+                                <div class="timeline-content">
+                                    <p>
+                                        <strong>
+                                            {% if donation_request.status == 'aprovada' or donation_request.status == 'entregue' %}
+                                                Solicitação Aprovada
+                                            {% else %}
+                                                Solicitação Rejeitada
+                                            {% endif %}
+                                        </strong>
+                                    </p>
+                                    <small class="text-muted">{{ donation_request.updated_at|date:"d/m/Y à\s H:i" }}</small>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <style>
+                        .timeline {
+                            position: relative;
+                            padding: 20px 0;
+                        }
+                        .timeline-item {
+                            display: flex;
+                            margin-bottom: 20px;
+                            position: relative;
+                        }
+                        .timeline-item:not(:last-child)::before {
+                            content: '';
+                            position: absolute;
+                            left: 9px;
+                            top: 40px;
+                            width: 2px;
+                            height: 30px;
+                            background-color: #dee2e6;
+                        }
+                        .timeline-marker {
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            margin-right: 20px;
+                            flex-shrink: 0;
+                            margin-top: 2px;
+                        }
+                    </style>
+                </div>
+            </div>
+
+            <!-- Ações Admin -->
+            {% if is_admin and donation_request.status == 'pendente' %}
+                <div class="card bg-light">
+                    <div class="card-header">
+                        <h6 class="mb-0">Ações Administrativas</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-2">
+                            <form method="post" action="{% url 'doacoes:approve_request' donation_request.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-check me-2"></i>Aprovar
+                                </button>
+                            </form>
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#rejectRequestModal">
+                                <i class="fas fa-times me-2"></i>Rejeitar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Botões de Navegação -->
+            <div class="mt-4">
+                {% if is_owner %}
+                    <a href="{% url 'doacoes:my_requests' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Voltar
+                    </a>
+                {% elif is_donor %}
+                    <a href="{% url 'doacoes:my_donations' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Minhas Doações
+                    </a>
+                {% endif %}
+            </div>
+    </div>
+</div>
+
+<!-- Modal Rejeitar -->
+<div class="modal fade" id="rejectRequestModal" tabindex="-1" aria-labelledby="rejectRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectRequestModalLabel">
+                    <i class="fas fa-times-circle me-2"></i>Rejeitar Solicitação
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="post" action="{% url 'doacoes:reject_request' donation_request.pk %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <p class="mb-3">Informe o motivo da rejeição para:</p>
+                    <p class="fw-bold mb-3">{{ donation_request.beneficiary.get_full_name|default:donation_request.beneficiary.username }}</p>
+                    <div class="mb-0">
+                        <label for="rejection_reason" class="form-label">Motivo da Rejeição:</label>
+                        <textarea class="form-control" id="rejection_reason" name="reason" rows="4" 
+                                  placeholder="Explique o motivo da rejeição..." required></textarea>
+                        <small class="form-text text-muted">O beneficiário receberá este motivo.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-check me-1"></i>Confirmar Rejeição
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

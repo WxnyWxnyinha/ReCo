@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Relatório de Reciclagem{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+<div class="container d-flex flex-column gap-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h1 class="h3 mb-1">Relatório de reciclagem</h1>
+      <p class="text-muted mb-0">Indicadores por período e parceiro.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'doacoes:recycling_dashboard' %}">Voltar</a>
+  </div>
+
+  <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
+    <label class="form-label mb-0 me-2">Período</label>
+    <select class="form-select w-auto" name="period" onchange="this.form.submit()">
+      <option value="30" {% if period == '30' %}selected{% endif %}>Últimos 30 dias</option>
+      <option value="90" {% if period == '90' %}selected{% endif %}>Últimos 90 dias</option>
+      <option value="365" {% if period == '365' %}selected{% endif %}>Últimos 12 meses</option>
+      <option value="all" {% if period == 'all' %}selected{% endif %}>Todo o período</option>
+    </select>
+  </form>
+
+  <div class="row g-3">
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Lotes</p>
+          <h4 class="mb-0">{{ total_batches }}</h4>
+          <small class="text-success">{{ certified_batches }} certificados</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Peso total</p>
+          <h4 class="mb-0">{{ total_weight|floatformat:1 }} kg</h4>
+          <small class="text-muted">Processado</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Itens</p>
+          <h4 class="mb-0">{{ total_items }}</h4>
+          <small class="text-muted">no período</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Impacto CO₂</p>
+          <h4 class="mb-0">{{ environmental_impact.co2_avoided_kg|floatformat:1 }} kg</h4>
+          <small class="text-muted">evitados</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="mb-3">Impacto ambiental</h5>
+      <ul class="list-unstyled mb-0 row g-3">
+        <li class="col-md-3">
+          <div class="p-3 border rounded h-100">
+            <p class="text-muted mb-1">CO₂ evitado</p>
+            <strong>{{ environmental_impact.co2_avoided_kg|floatformat:1 }} kg</strong>
+          </div>
+        </li>
+        <li class="col-md-3">
+          <div class="p-3 border rounded h-100">
+            <p class="text-muted mb-1">Energia</p>
+            <strong>{{ environmental_impact.energy_saved_kwh|floatformat:1 }} kWh</strong>
+          </div>
+        </li>
+        <li class="col-md-3">
+          <div class="p-3 border rounded h-100">
+            <p class="text-muted mb-1">Água</p>
+            <strong>{{ environmental_impact.water_saved_liters|floatformat:0 }} L</strong>
+          </div>
+        </li>
+        <li class="col-md-3">
+          <div class="p-3 border rounded h-100">
+            <p class="text-muted mb-1">Árvores</p>
+            <strong>{{ environmental_impact.trees_preserved|floatformat:2 }}</strong>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Parceiros</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead><tr><th>Parceiro</th><th>Lotes</th><th>Peso (kg)</th></tr></thead>
+          <tbody>
+            {% for partner in partner_stats %}
+              <tr>
+                <td>{{ partner.company_name }}</td>
+                <td>{{ partner.batch_count }}</td>
+                <td>{{ partner.total_weight|default_if_none:0|floatformat:1 }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="3" class="text-center text-muted py-4">Nenhum dado para o período.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

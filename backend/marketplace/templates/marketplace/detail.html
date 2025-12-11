@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ donation.title }} — Doações{% endblock %}
+
+{% block content %}
+  <div class="container-fluid mt-4">
+  <div class="container d-flex flex-column gap-4">
+    <section class="section-card">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+        <div>
+          <p class="text-muted mb-1">{{ donation.city|default:'Cidade não informada' }}</p>
+          <h1 class="h3 mb-1">{{ donation.title }}</h1>
+          <span class="pill">{{ donation.get_condition_display }}</span>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <a class="btn btn-outline-secondary" href="{% url 'doacoes:index' %}">Voltar</a>
+          {% if user.is_authenticated %}
+            <a class="btn btn-primary" href="{% url 'doacoes:chat' donation.pk %}">Abrir chat</a>
+            {% if user != donation.donor %}
+              <a class="btn btn-outline-success" href="{% url 'doacoes:my_donations' %}">Minhas Doações</a>
+            {% else %}
+              <a class="btn btn-outline-info" href="{% url 'doacoes:my_donations' %}">Gerenciar</a>
+            {% endif %}
+          {% else %}
+            <a class="btn btn-primary" href="{% url 'usuario:login' %}">Entrar para conversar</a>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if donation.image %}
+        <div class="donation-hero-image mt-4">
+          <img src="{{ donation.image.url }}" alt="Imagem de {{ donation.title }}">
+        </div>
+      {% endif %}
+
+      <p class="mt-3">{{ donation.description|default:"Sem descrição"|linebreaks }}</p>
+
+      <!-- Botão Solicitar Doação -->
+      {% if user.is_authenticated and user != donation.donor %}
+        <div class="mt-4">
+          {% if donation.status == 'aprovada' %}
+            <a class="btn btn-success btn-lg" href="{% url 'doacoes:request_donation' donation.pk %}">
+              <i class="fas fa-hand-paper me-2"></i>Solicitar este Item
+            </a>
+          {% elif donation.status == 'pendente' %}
+            <div class="alert alert-warning" role="alert">
+              <i class="fas fa-clock me-2"></i>Esta doação ainda está pendente de aprovação do administrador.
+            </div>
+          {% elif donation.status == 'entregue' %}
+            <div class="alert alert-info" role="alert">
+              <i class="fas fa-check-circle me-2"></i>Este item já foi entregue.
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+
+      <dl class="row mt-4">
+        <dt class="col-md-3">Doador</dt>
+        <dd class="col-md-9">{{ donation.donor.get_full_name|default:donation.donor.username }}</dd>
+
+        <dt class="col-md-3">Email de contato</dt>
+        <dd class="col-md-9">
+          {% if donation.contact_email %}
+            <a href="mailto:{{ donation.contact_email }}">{{ donation.contact_email }}</a>
+          {% else %}
+            —
+          {% endif %}
+        </dd>
+
+        <dt class="col-md-3">Telefone</dt>
+        <dd class="col-md-9">{{ donation.contact_phone|default:"—" }}</dd>
+      </dl>
+    </section>
+
+    {% if related %}
+      <section>
+        <h2 class="h5 mb-3">Outros itens recentes</h2>
+        <div class="donation-grid">
+          {% for item in related %}
+            <a href="{% url 'doacoes:detail' item.pk %}" class="donation-grid-item">
+              <div class="donation-grid-image">
+                {% if item.image %}
+                  <img src="{{ item.image.url }}" alt="Imagem de {{ item.title }}">
+                {% else %}
+                  <div class="placeholder-image">
+                    <i class="fas fa-image"></i>
+                  </div>
+                {% endif %}
+              </div>
+              <div class="donation-grid-info">
+                <h3>{{ item.title|truncatewords:6 }}</h3>
+                <p class="condition">{{ item.get_condition_display }}</p>
+                <p class="city">{{ item.city|default:'Cidade não informada' }}</p>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  </div>
+  </div>
+{% endblock %}

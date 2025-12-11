@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Editar Perfil — ReCo{% endblock %}
+
+{% block content %}
+  <div class="container-fluid mt-4">
+  <div class="container d-flex flex-column gap-4">
+    <section class="form-card">
+      <h1 class="h3 mb-2">Atualizar perfil</h1>
+      <p class="text-muted mb-0">Mantenha seus dados sempre atualizados para agilizar a comunicação com doadores e receptores.</p>
+
+      <form method="post" action="{% url 'perfil:edit' %}" class="mt-4" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Nome</label>
+            <input class="form-control" type="text" name="first_name" value="{{ user.first_name }}">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input class="form-control" type="email" name="email" value="{{ user.email }}">
+          </div>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="row g-3">
+          {% for field in form %}
+            <div class="{% if field.name == 'profile_photo' %}col-12{% else %}col-md-6{% endif %}">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+              
+              {% if field.name == 'profile_photo' %}
+                <div class="row">
+                  {% if user.profile.profile_photo %}
+                    <div class="col-md-4 mb-3">
+                      <div class="p-3" style="background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; height: 100%;">
+                        <p class="mb-2"><strong>Foto atual:</strong></p>
+                        <img src="{{ user.profile.profile_photo.url }}" alt="Foto atual" class="img-fluid" style="max-width: 100%; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                        <p class="text-muted small mt-2 mb-0">{{ user.profile.profile_photo.name }}</p>
+                      </div>
+                    </div>
+                    <div class="col-md-8 mb-3">
+                      <div class="mb-3">
+                        <label class="form-label"><strong>Substituir foto:</strong></label>
+                        {{ field }}
+                        <small class="text-muted d-block mt-1">Escolha uma nova imagem para substituir a foto atual, ou deixe em branco para manter a foto existente.</small>
+                      </div>
+                      <div class="form-check">
+                        <input type="checkbox" name="profile_photo-clear" id="profile_photo-clear" class="form-check-input">
+                        <label class="form-check-label" for="profile_photo-clear">
+                          <strong>Remover foto do perfil</strong> (marque apenas se quiser ficar sem foto)
+                        </label>
+                      </div>
+                    </div>
+                  {% else %}
+                    <div class="col-12 mb-3">
+                      {{ field }}
+                      <small class="text-muted d-block mt-1">Você ainda não tem uma foto de perfil. Escolha uma imagem para adicionar.</small>
+                    </div>
+                  {% endif %}
+                </div>
+                {{ field.errors }}
+              {% elif field.name == 'user_type' %}
+                {{ field }}
+                <small class="text-muted d-block">Tipo de usuário é definido no cadastro e não pode ser alterado.</small>
+              {% elif field.name == 'cpf_cnpj' %}
+                {{ field }}
+                <small class="text-muted d-block">Documento cadastrado não pode ser alterado. Para corrigir, entre em contato com o suporte.</small>
+              {% elif field.name == 'razao_social' %}
+                {{ field }}
+                {% if field.help_text %}
+                  <small class="text-muted d-block">{{ field.help_text }}</small>
+                {% else %}
+                  <small class="text-muted d-block">Razão social é apenas para Empresas/ONGs.</small>
+                {% endif %}
+              {% else %}
+                {{ field }}
+                {% if field.help_text %}<small class="text-muted d-block">{{ field.help_text }}</small>{% endif %}
+              {% endif %}
+              
+              {% if field.name != 'profile_photo' %}
+                {{ field.errors }}
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+
+        <div class="d-flex gap-2 mt-4">
+          <button class="btn btn-primary" type="submit">Salvar</button>
+          <a class="btn btn-outline-secondary" href="{% url 'perfil:index' %}">Cancelar</a>
+        </div>
+      </form>
+    </section>
+  </div>
+  </div>
+{% endblock %}

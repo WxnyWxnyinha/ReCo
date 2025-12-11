@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Painel Administrativo - ReCo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="mb-2">Painel Administrativo</h1>
+            <p class="text-muted">Bem-vindo! Aqui você gerencia doações, solicitações e entregas</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <div class="btn-group" role="group">
+                <a href="{% url 'doacoes:admin_donations_management' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-box"></i> Doações
+                </a>
+                <a href="{% url 'doacoes:admin_requests_management' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-hand-thumbs-up"></i> Solicitações
+                </a>
+                <a href="{% url 'doacoes:admin_deliveries_management' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-truck"></i> Entregas
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estatísticas Principais -->
+    <div class="row mb-4">
+        <!-- Doações -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-primary">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-auto">
+                            <i class="fas fa-cube fa-2x text-primary"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-primary fw-bold">{{ stats.total_donations }}</div>
+                            <small class="text-muted">Total de Doações</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Solicitações Pendentes -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-warning">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-auto">
+                            <i class="fas fa-hourglass-half fa-2x text-warning"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-warning fw-bold">{{ stats.pending_requests }}</div>
+                            <small class="text-muted">Solicitações Pendentes</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Entregas em Trânsito -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-info">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-auto">
+                            <i class="fas fa-truck fa-2x text-info"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-info fw-bold">{{ stats.pending_deliveries }}</div>
+                            <small class="text-muted">Entregas em Progresso</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Impacto Ambiental -->
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-success">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-auto">
+                            <i class="fas fa-leaf fa-2x text-success"></i>
+                        </div>
+                        <div class="col">
+                            <div class="text-success fw-bold">{{ stats.estimated_co2_saved|floatformat:0 }} kg</div>
+                            <small class="text-muted">CO₂ Evitado</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widgets de Ação Rápida -->
+    <div class="row mb-4">
+        <!-- Doações Pendentes de Aprovação -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-circle text-warning"></i>
+                        Doações Pendentes ({{ pending_donations|length }})
+                    </h5>
+                    <a href="{% url 'doacoes:admin_donations_management' %}?status=pendente" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for donation in pending_donations %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ donation.title }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user"></i> {{ donation.donor.get_full_name|default:donation.donor.username }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-warning">Pendente</span>
+                            </div>
+                            <small class="text-muted d-block mt-2">Criado há {{ donation.created_at|timesince }}</small>
+                        </div>
+                    {% empty %}
+                        <div class="list-group-item text-center py-4 text-muted">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <p>Nenhuma doação pendente!</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Solicitações Pendentes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-hand-paper text-info"></i>
+                        Solicitações Pendentes ({{ pending_requests|length }})
+                    </h5>
+                    <a href="{% url 'doacoes:admin_requests_management' %}?status=pendente" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for request in pending_requests %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1">{{ request.donation.title }}</h6>
+                                    <small class="text-muted">
+                                        <i class="fas fa-user"></i> {{ request.beneficiary.get_full_name|default:request.beneficiary.username }}
+                                    </small>
+                                </div>
+                                <span class="badge bg-info">{{ request.get_status_display }}</span>
+                            </div>
+                            <small class="text-muted d-block mt-2">
+                                Motivo: {{ request.reason|truncatewords:8 }}
+                            </small>
+                            <div class="mt-2">
+                                <a href="{% url 'doacoes:request_detail' request.pk %}" class="btn btn-sm btn-primary">
+                                    Revisar
+                                </a>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="list-group-item text-center py-4 text-muted">
+                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                            <p>Nenhuma solicitação pendente!</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Entregas Ativas -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shipping-fast text-success"></i>
+                        Entregas em Progresso ({{ active_deliveries|length }})
+                    </h5>
+                    <a href="{% url 'doacoes:admin_deliveries_management' %}" class="btn btn-sm btn-outline-primary">Gerenciar</a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Doação</th>
+                                <th>Transportador</th>
+                                <th>Status</th>
+                                <th>Coleta</th>
+                                <th>Entrega</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for delivery in active_deliveries %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ delivery.donation.title }}</strong>
+                                    </td>
+                                    <td>{{ delivery.driver.get_full_name|default:delivery.driver.username }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ delivery.get_status_display|lower|slice:":1" }}">
+                                            {{ delivery.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if delivery.pickup_time %}
+                                            {{ delivery.pickup_time|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if delivery.delivery_time %}
+                                            {{ delivery.delivery_time|date:"d/m/Y H:i" }}
+                                        {% else %}
+                                            <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'doacoes:admin_deliveries_management' %}" class="btn btn-sm btn-outline-secondary">
+                                            Ver
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                        Nenhuma entrega em progresso no momento
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumo de Estatísticas Mensais -->
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h3 class="text-primary mb-1">{{ stats.donations_this_month }}</h3>
+                    <small class="text-muted">Doações este mês</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h3 class="text-info mb-1">{{ stats.requests_this_month }}</h3>
+                    <small class="text-muted">Solicitações este mês</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h3 class="text-success mb-1">{{ stats.estimated_kg }}</h3>
+                    <small class="text-muted">Kg de resíduos reutilizados</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 4px solid #0d6efd !important;
+}
+.border-left-warning {
+    border-left: 4px solid #ffc107 !important;
+}
+.border-left-info {
+    border-left: 4px solid #0dcaf0 !important;
+}
+.border-left-success {
+    border-left: 4px solid #198754 !important;
+}
+</style>
+{% endblock %}

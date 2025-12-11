@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+
+{% block title %}Painel do Transportador{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+    <div>
+      <h1 class="h4 mb-1">Painel do Transportador</h1>
+      <p class="text-muted mb-0">Acompanhe suas entregas atribuídas e histórico.</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'doacoes:index' %}">Voltar às doações</a>
+  </div>
+
+  <div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Pendentes</p>
+          <h4 class="mb-0">{{ stats.pending }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Em trânsito</p>
+          <h4 class="mb-0">{{ stats.in_transit }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Concluídas</p>
+          <h4 class="mb-0">{{ stats.completed }}</h4>
+        </div>
+      </div>
+    </div>
+    <div class="col-6 col-lg-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <p class="text-muted mb-1">Total</p>
+          <h4 class="mb-0">{{ stats.total }}</h4>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Entregas ativas</h5>
+        <form method="post" action="{% url 'doacoes:driver_toggle_availability' %}">
+          {% csrf_token %}
+          <button class="btn btn-sm {% if request.user.profile.is_available %}btn-success{% else %}btn-outline-secondary{% endif %}" type="submit">
+            {% if request.user.profile.is_available %}Disponível{% else %}Ficar disponível{% endif %}
+          </button>
+        </form>
+      </div>
+      {% if active_deliveries %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>Doação</th><th>Doado por</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody>
+            {% for delivery in active_deliveries %}
+              <tr>
+                <td>{{ delivery.donation.title }}</td>
+                <td>{{ delivery.donation.donor.get_full_name|default:delivery.donation.donor.username }}</td>
+                <td><span class="badge bg-secondary">{{ delivery.get_status_display }}</span></td>
+                <td>
+                  <a class="btn btn-sm btn-outline-primary" href="{% url 'doacoes:driver_delivery_detail' delivery.pk %}">Detalhes</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="text-muted mb-0">Nenhuma entrega ativa.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="mb-3">Histórico recente</h5>
+      {% if recent_deliveries %}
+      <div class="table-responsive">
+        <table class="table align-middle mb-0">
+          <thead><tr><th>Doação</th><th>Status</th><th>Entregue em</th><th></th></tr></thead>
+          <tbody>
+            {% for delivery in recent_deliveries %}
+              <tr>
+                <td>{{ delivery.donation.title }}</td>
+                <td><span class="badge bg-secondary">{{ delivery.get_status_display }}</span></td>
+                <td>{{ delivery.delivered_at|date:'d/m/Y H:i'|default:'-' }}</td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-secondary" href="{% url 'doacoes:driver_delivery_detail' delivery.pk %}">Ver</a>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="text-muted mb-0">Nenhum histórico.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

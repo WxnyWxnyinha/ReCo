@@ -1,0 +1,250 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Gerenciamento de Entregas - ReCo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-0">Gerenciamento de Entregas</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'doacoes:admin_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar ao Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-6">
+                    <label for="status" class="form-label">Filtrar por Status</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Todos os status</option>
+                        <option value="atribuida" {% if status_filter == 'atribuida' %}selected{% endif %}>Atribuída</option>
+                        <option value="coletada" {% if status_filter == 'coletada' %}selected{% endif %}>Coletada</option>
+                        <option value="em_transito" {% if status_filter == 'em_transito' %}selected{% endif %}>Em Trânsito</option>
+                        <option value="entregue" {% if status_filter == 'entregue' %}selected{% endif %}>Entregue</option>
+                        <option value="cancelada" {% if status_filter == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label for="driver" class="form-label">Filtrar por Transportador</label>
+                    <select class="form-select" id="driver" name="driver">
+                        <option value="">Todos os transportadores</option>
+                        {% for driver in drivers %}
+                            <option value="{{ driver.pk }}" {% if driver_filter|stringformat:"s" == driver.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ driver.user.get_full_name|default:driver.user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                    <a href="{% url 'doacoes:admin_deliveries_management' %}" class="btn btn-outline-secondary">
+                        Limpar Filtros
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resumo de Status -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-primary">{{ stats.total }}</h4>
+                    <small class="text-muted">Total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-warning">{{ stats.pending }}</h4>
+                    <small class="text-muted">Pendentes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-info">{{ stats.in_transit }}</h4>
+                    <small class="text-muted">Em Trânsito</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h4 class="text-success">{{ stats.delivered }}</h4>
+                    <small class="text-muted">Entregues</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Entregas -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Doação</th>
+                        <th>Transportador</th>
+                        <th>Status</th>
+                        <th>Coleta</th>
+                        <th>Entrega</th>
+                        <th>Tempo Decorrido</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for delivery in deliveries %}
+                        <tr>
+                            <td>
+                                <strong>{{ delivery.donation.title|truncatewords:3 }}</strong>
+                                <br>
+                                <small class="text-muted">Beneficiário: 
+                                    {% with request=delivery.donation.donationrequest_set.first %}
+                                        {% if request %}
+                                            {{ request.beneficiary.get_full_name|default:request.beneficiary.username }}
+                                        {% else %}
+                                            <em>Sem solicitação</em>
+                                        {% endif %}
+                                    {% endwith %}
+                                </small>
+                            </td>
+                            <td>
+                                {% if delivery.driver %}
+                                    <i class="fas fa-user"></i>
+                                    {{ delivery.driver.get_full_name|default:delivery.driver.username }}
+                                {% else %}
+                                    <span class="text-muted">Não atribuído</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if delivery.status == 'atribuida' %}
+                                    <span class="badge bg-warning">Atribuída</span>
+                                {% elif delivery.status == 'coletada' %}
+                                    <span class="badge bg-info">Coletada</span>
+                                {% elif delivery.status == 'em_transito' %}
+                                    <span class="badge bg-info">Em Trânsito</span>
+                                {% elif delivery.status == 'entregue' %}
+                                    <span class="badge bg-success">Entregue</span>
+                                {% elif delivery.status == 'cancelada' %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if delivery.pickup_time %}
+                                    {{ delivery.pickup_time|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if delivery.delivery_time %}
+                                    {{ delivery.delivery_time|date:"d/m/Y H:i" }}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if delivery.pickup_time and delivery.delivery_time %}
+                                    {% with duration=delivery.delivery_time|add:delivery.pickup_time|timeuntil %}
+                                        {{ delivery.delivery_time|timesince:delivery.pickup_time }}
+                                    {% endwith %}
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#deliveryModal{{ delivery.pk }}" title="Ver detalhes">
+                                    <i class="fas fa-eye me-1"></i>Ver
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Modal de Detalhes -->
+                        <div class="modal fade" id="deliveryModal{{ delivery.pk }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Detalhes da Entrega</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <h6>Informações da Doação</h6>
+                                        <p class="mb-1"><strong>{{ delivery.donation.title }}</strong></p>
+                                        <p class="text-muted mb-3">{{ delivery.donation.description }}</p>
+
+                                        <h6>Informações da Entrega</h6>
+                                        <dl class="row mb-0">
+                                            <dt class="col-sm-4">Transportador:</dt>
+                                            <dd class="col-sm-8">
+                                                {% if delivery.driver %}
+                                                    {{ delivery.driver.get_full_name|default:delivery.driver.username }}
+                                                {% else %}
+                                                    <span class="text-muted">Não atribuído</span>
+                                                {% endif %}
+                                            </dd>
+
+                                            <dt class="col-sm-4">Status:</dt>
+                                            <dd class="col-sm-8">
+                                                <span class="badge bg-primary">{{ delivery.get_status_display }}</span>
+                                            </dd>
+
+                                            <dt class="col-sm-4">Coleta:</dt>
+                                            <dd class="col-sm-8">
+                                                {% if delivery.pickup_time %}
+                                                    {{ delivery.pickup_time|date:"d/m/Y H:i" }}
+                                                {% else %}
+                                                    <span class="text-muted">Aguardando coleta</span>
+                                                {% endif %}
+                                            </dd>
+
+                                            <dt class="col-sm-4">Entrega:</dt>
+                                            <dd class="col-sm-8">
+                                                {% if delivery.delivery_time %}
+                                                    {{ delivery.delivery_time|date:"d/m/Y H:i" }}
+                                                {% else %}
+                                                    <span class="text-muted">Aguardando entrega</span>
+                                                {% endif %}
+                                            </dd>
+
+                                            {% if delivery.proof_image %}
+                                                <dt class="col-sm-4">Comprovante de Entrega:</dt>
+                                                <dd class="col-sm-8">
+                                                    <img src="{{ delivery.proof_image.url }}" alt="Comprovante" class="img-thumbnail" style="max-width: 200px;">
+                                                </dd>
+                                            {% endif %}
+                                        </dl>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4 text-muted">
+                                <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                                Nenhuma entrega encontrada
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

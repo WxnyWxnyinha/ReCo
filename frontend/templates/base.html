@@ -1,0 +1,112 @@
+<!doctype html>
+{% load static %}
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}ReCo{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <a class="skip-link" href="#conteudo-principal">Pular para o conteúdo principal</a>
+  <header class="site-header">
+    <div class="container nav-container">
+      <a class="brand" href="{% url 'home' %}">
+        <img src="{% static 'Design sem nome.png' %}" alt="Logotipo ReCo" height="75" loading="lazy">
+      </a>
+
+      <div class="nav-actions">
+        {% if request.user.is_authenticated %}
+          <span class="welcome">Olá, {{ request.user.first_name|default:request.user.username }}</span>
+          <a class="btn btn-primary btn-sm" href="{% url 'doacoes:create' %}">Anunciar item</a>
+
+          <div class="nav-dropdown">
+            <button class="btn btn-secondary btn-sm" type="button" data-nav-toggle aria-haspopup="true" aria-expanded="false" aria-label="Abrir menu de navegação">
+              Menu
+              <span aria-hidden="true">▾</span>
+            </button>
+            <div class="nav-dropdown-menu" role="menu">
+              <a role="menuitem" href="{% url 'home' %}">Início</a>
+              <a role="menuitem" href="{% url 'doacoes:index' %}">Doações</a>
+              <a role="menuitem" href="{% url 'doacoes:collection_points_map' %}">Mapa de pontos</a>
+              <a role="menuitem" href="{% url 'perfil:index' %}">Perfil</a>
+              <a role="menuitem" href="{% url 'doacoes:chats' %}">Chats</a>
+              {% if request.user.is_staff %}
+                <a role="menuitem" href="{% url 'doacoes:admin_dashboard' %}">Painel Admin</a>
+                <a role="menuitem" href="{% url 'doacoes:reports_dashboard' %}">Relatórios</a>
+                <a role="menuitem" href="{% url 'doacoes:recycling_dashboard' %}">Reciclagem</a>
+              {% endif %}
+              {% if request.user.is_authenticated and request.user.profile.user_type == 'transportador' %}
+                <a role="menuitem" href="{% url 'doacoes:driver_dashboard' %}">Painel do transportador</a>
+              {% endif %}
+              <a role="menuitem" href="{% url 'usuario:logout' %}">Sair</a>
+            </div>
+          </div>
+        {% else %}
+          {% if request.resolver_match.url_name != 'login' and request.resolver_match.url_name != 'register' %}
+            <a class="btn btn-primary btn-sm" href="{% url 'usuario:login' %}" style="background: linear-gradient(135deg, #D96704, #D9933D); border: none; color: #fff; font-weight: 600; box-shadow: 0 4px 10px rgba(217, 103, 4, 0.3);">Entrar</a>
+            <a class="btn btn-outline-primary btn-sm" href="{% url 'usuario:register' %}" style="border: 2px solid #D96704; color: #D96704; background: transparent; font-weight: 600; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='rgba(217, 103, 4, 0.1)'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='transparent'; this.style.transform='translateY(0)';">Criar conta</a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  {% if messages %}
+    <div class="container message-stack">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} shadow-sm" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <main class="site-main" id="conteudo-principal">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container" style="text-align: center;">
+      <p style="margin-bottom: 0.5rem; font-weight: 700; font-size: 1.3rem; letter-spacing: 1px;">ReCo — Reutilize &amp; Conecte</p>
+      <p>Reutiliza &amp; Conecta — conectando doadores e iniciativas que transformam eletrônicos em oportunidade.</p>
+      <p style="margin: 0.5rem 0; font-size: 0.95rem;">
+        📧 Contato: <a href="mailto:contato@recco.com" style="color: inherit; text-decoration: underline; font-weight: 500;">contato@recco.com</a>
+        • <a href="{% url 'privacy_policy' %}" style="color: inherit; text-decoration: underline;">Política de Privacidade</a>
+      </p>
+      <small>&copy; {% now "Y" %} ReCo</small>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    (function(){
+      const dropdown = document.querySelector('.nav-dropdown');
+      if (!dropdown) return;
+      const menu = dropdown.querySelector('.nav-dropdown-menu');
+      const toggle = dropdown.querySelector('[data-nav-toggle]');
+      if (!menu || !toggle) return;
+
+      function closeMenu(){
+        dropdown.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
+
+      toggle.addEventListener('click', function(){
+        const isOpen = dropdown.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', isOpen);
+      });
+
+      document.addEventListener('click', function(event){
+        if (!dropdown.contains(event.target)) {
+          closeMenu();
+        }
+      });
+    })();
+  </script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

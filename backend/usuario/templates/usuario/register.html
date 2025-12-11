@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Criar conta — ReCo{% endblock %}
+
+{% block content %}
+  <div class="container-fluid mt-4">
+  <div class="container d-flex flex-column gap-4">
+    <section class="form-card">
+      <h1 class="h3 mb-2 text-center">Crie sua conta</h1>
+      <p class="text-muted mb-0 text-center">Preencha os dados principais para publicar doações ou solicitar itens. Leva menos de 2 minutos.</p>
+
+      <form method="post" action="{% url 'usuario:register' %}" class="mt-4">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Usuário</label>
+            {{ form.username }}
+            {{ form.username.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email</label>
+            {{ form.email }}
+            {{ form.email.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Nome completo</label>
+            {{ form.first_name }}
+            {{ form.first_name.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Telefone</label>
+            {{ form.phone }}
+            {{ form.phone.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Cidade</label>
+            {{ form.city }}
+            {{ form.city.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Tipo de usuário</label>
+            {{ form.user_type }}
+            {{ form.user_type.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">CPF/CNPJ</label>
+            {{ form.cpf_cnpj }}
+            {{ form.cpf_cnpj.errors }}
+          </div>
+          <div class="col-md-6" id="razao-wrap" style="display:none;">
+            <label class="form-label">Razão social</label>
+            {{ form.razao_social }}
+            {{ form.razao_social.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Data de nascimento</label>
+            {{ form.birth_date }}
+            {{ form.birth_date.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Senha</label>
+            {{ form.password1 }}
+            {{ form.password1.errors }}
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Confirmar senha</label>
+            {{ form.password2 }}
+            {{ form.password2.errors }}
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <div class="form-check d-flex align-items-start gap-2" style="padding: 1rem; border: 1px solid rgba(217, 103, 4, 0.35); border-radius: 10px; background: linear-gradient(90deg, rgba(255, 244, 232, 0.9), rgba(255, 255, 255, 0.9));">
+            <input type="checkbox" name="{{ form.consent_privacy.html_name }}" id="id_consent_privacy" class="form-check-input" style="margin-top: 0.25rem; margin-left: 0;" {% if form.consent_privacy.value %}checked{% endif %}>
+            <label class="form-check-label" for="id_consent_privacy" style="font-weight: 600; color: #2e1f15; line-height: 1.45;">
+              Li e concordo com a
+              <a href="{% url 'privacy_policy' %}" target="_blank" rel="noopener" style="color: #d96704; font-weight: 700; text-decoration: underline;">
+                Política de Privacidade
+              </a>
+              e autorizo o tratamento dos meus dados para uso da plataforma.
+            </label>
+            {{ form.consent_privacy.errors }}
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-center gap-2 mt-4">
+          <button class="btn btn-primary" type="submit">Criar minha conta</button>
+        </div>
+      </form>
+
+      <hr class="my-4">
+      
+      <p class="text-center mb-0">Já tem conta? 
+        <a href="{% url 'usuario:login' %}" class="btn btn-outline-secondary">Entrar na conta</a>
+      </p>
+    </section>
+  </div>
+
+  <script>
+    (function(){
+      const userTypeEl = document.querySelector('select[name="user_type"]');
+      const razaoWrap = document.getElementById('razao-wrap');
+      const cpfEl = document.querySelector('input[name="cpf_cnpj"]');
+      const dateEl = document.querySelector('input[name="birth_date"]');
+
+      function toggleRazao() {
+        if (!userTypeEl || !razaoWrap) return;
+        razaoWrap.style.display = userTypeEl.value === 'pj' ? 'block' : 'none';
+      }
+
+      function maskCpfCnpj(value) {
+        let digits = value.replace(/\D/g, '').slice(0, 14);
+        if (digits.length <= 11) {
+          digits = digits.replace(/(\d{3})(\d)/, '$1.$2');
+          digits = digits.replace(/(\d{3})(\d)/, '$1.$2');
+          digits = digits.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        } else {
+          digits = digits.replace(/(\d{2})(\d)/, '$1.$2');
+          digits = digits.replace(/(\d{3})(\d)/, '$1.$2');
+          digits = digits.replace(/(\d{3})(\d)/, '$1/$2');
+          digits = digits.replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+        }
+        return digits;
+      }
+
+      function maskDate(value) {
+        let digits = value.replace(/\D/g, '').slice(0, 8);
+        if (digits.length >= 5) {
+          return digits.replace(/(\d{2})(\d{2})(\d{1,4})/, '$1/$2/$3');
+        }
+        if (digits.length >= 3) {
+          return digits.replace(/(\d{2})(\d{1,2})/, '$1/$2');
+        }
+        return digits;
+      }
+
+      if (cpfEl) {
+        cpfEl.addEventListener('input', function(){
+          this.value = maskCpfCnpj(this.value);
+        });
+      }
+
+      if (dateEl) {
+        dateEl.addEventListener('input', function(){
+          this.value = maskDate(this.value);
+        });
+      }
+
+      if (userTypeEl) {
+        userTypeEl.addEventListener('change', toggleRazao);
+        toggleRazao();
+      }
+    })();
+  </script>
+  </div>
+  </div>
+{% endblock %}

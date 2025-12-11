@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Excluir conta — ReCo{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 720px; padding-top: 2rem; padding-bottom: 2rem;">
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h1 class="h4 mb-3">Excluir minha conta</h1>
+      <p class="text-muted">Esta ação é permanente. Seus dados pessoais e histórico associado serão removidos, conforme direito ao esquecimento (LGPD).</p>
+      <p class="mb-4">Para prosseguir, confirme abaixo:</p>
+      <form method="post">
+        {% csrf_token %}
+        <div class="alert alert-warning" role="alert">
+          Tem certeza? Esta operação não pode ser desfeita.
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <a class="btn btn-outline-secondary" href="{%- if request.META.HTTP_REFERER %}{{ request.META.HTTP_REFERER }}{%- else %}{% url 'home' %}{% endif %}">Cancelar</a>
+          <button class="btn btn-danger" type="submit">Excluir definitivamente</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

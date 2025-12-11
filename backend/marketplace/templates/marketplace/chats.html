@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Conversas — ReCo{% endblock %}
+
+{% block content %}
+  <div class="container-fluid mt-4">
+  <div class="container d-flex flex-column gap-4">
+    <section class="section-card">
+      <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+          <h1 class="h3 mb-2">Minhas conversas</h1>
+          <p class="text-muted mb-0">Acompanhe o histórico com doadores e interessados. Novas mensagens aparecem automaticamente no chat do anúncio.</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="{% url 'doacoes:index' %}">Ver doações</a>
+      </div>
+
+      {% if conversations %}
+        <div class="list-group">
+          {% for c in conversations %}
+            <a class="list-group-item list-group-item-action" href="{% url 'doacoes:chat' c.donation.pk %}?with={{ c.other.pk }}">
+              <div class="d-flex w-100 justify-content-between">
+                <div>
+                  <h2 class="h6 mb-1">{{ c.donation.title }}</h2>
+                  <small class="text-muted">Com {{ c.other.get_full_name|default:c.other.username }}</small>
+                </div>
+                <small class="text-muted">{{ c.last_message.created_at|date:"d/m/Y H:i" }}</small>
+              </div>
+              <p class="mb-0 text-truncate"><strong>{{ c.last_message.sender.get_short_name|default:c.last_message.sender.username }}:</strong> {{ c.last_message.text }}</p>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="text-muted mb-0">Nenhuma conversa encontrada. Abra um anúncio e envie a primeira mensagem para começar.</p>
+      {% endif %}
+    </section>
+  </div>
+  </div>
+{% endblock %}

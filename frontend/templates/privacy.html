@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Política de Privacidade — ReCo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+  <div class="container d-flex flex-column gap-4">
+    <div style="max-width: 900px;">
+      <h1 class="h3 mb-3">Política de Privacidade</h1>
+      <p class="text-muted">Última atualização: {% now "d/m/Y" %}</p>
+
+      <div class="card shadow-sm mb-4">
+        <div class="card-body">
+          <h5>1. Controlador dos dados</h5>
+          <p>A ReCo é a controladora dos dados pessoais tratados na plataforma.</p>
+
+          <h5 class="mt-4">2. Dados pessoais coletados</h5>
+          <ul>
+            <li>Identificação: nome, email, telefone, CPF/CNPJ, data de nascimento.</li>
+            <li>Conta: usuário e senha (armazenada de forma criptografada).</li>
+            <li>Operação: cidade, tipo de usuário, histórico de doações e solicitações.</li>
+        </ul>
+
+        <h5 class="mt-4">3. Finalidades</h5>
+        <ul>
+          <li>Viabilizar cadastro, autenticação e comunicação com usuários.</li>
+          <li>Operar doações, solicitações, entregas e reciclagem.</li>
+          <li>Enviar notificações transacionais sobre status das operações.</li>
+        </ul>
+
+        <h5 class="mt-4">4. Bases legais</h5>
+        <p>Tratamento baseado em consentimento do titular e legítimo interesse para execução da plataforma (art. 7º, I e IX da LGPD).</p>
+
+        <h5 class="mt-4">5. Compartilhamento</h5>
+        <p>Dados podem ser compartilhados com voluntários, parceiros recicladores e provedores de infraestrutura (email, hospedagem) apenas para execução das funcionalidades.</p>
+
+        <h5 class="mt-4">6. Retenção</h5>
+        <p>Dados são mantidos enquanto a conta estiver ativa ou conforme obrigações legais. O titular pode solicitar exclusão a qualquer momento.</p>
+
+        <h5 class="mt-4">7. Direitos do titular</h5>
+        <ul>
+          <li>Acesso e correção de dados.</li>
+          <li>Portabilidade em formato estruturado.</li>
+          <li>Revogação de consentimento.</li>
+          <li>Exclusão da conta (direito ao esquecimento).</li>
+        </ul>
+
+        <h5 class="mt-4">8. Segurança</h5>
+        <p>Uso de HTTPS, autenticação por senha criptografada, proteção CSRF e práticas de minimização de dados.</p>
+
+        <h5 class="mt-4">9. Contato do DPO</h5>
+        <p>E-mail: dpo@reco.com.br</p>
+
+        <div class="alert alert-info mt-4 mb-0">
+          Para exercer seus direitos, envie um email para dpo@reco.com.br ou utilize a opção "Excluir minha conta" na área do usuário.
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+{% endblock %}

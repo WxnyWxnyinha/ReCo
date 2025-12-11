@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Enviar Comprovante{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+    <h1 class="h4 mb-0">Enviar comprovante</h1>
+    <a class="btn btn-outline-secondary" href="{% url 'doacoes:driver_delivery_detail' delivery.pk %}">Voltar</a>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data" class="row g-3">
+        {% csrf_token %}
+        <div class="col-md-6">
+          <label class="form-label">Foto do comprovante</label>
+          <input class="form-control" type="file" name="proof_image" accept="image/*">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Assinatura</label>
+          <input class="form-control" type="file" name="signature_image" accept="image/*">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Observações</label>
+          <textarea class="form-control" name="notes" rows="2">{{ delivery.notes }}</textarea>
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-primary" type="submit">Enviar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: #f9f9f9; }
+        .header { background: #dc3545; color: white; padding: 20px; border-radius: 5px 5px 0 0; text-align: center; }
+        .content { background: white; padding: 20px; }
+        .footer { text-align: center; padding: 10px; font-size: 12px; color: #777; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>❌ Sua doação foi rejeitada</h1>
+        </div>
+        <div class="content">
+            <p>Olá <strong>{{ donor_name }}</strong>,</p>
+            <p>Infelizmente, sua doação foi rejeitada. Motivo:</p>
+            <p><strong>{{ rejection_reason }}</strong></p>
+            <p>Você pode tentar novamente com outro item. Clique aqui para cadastrar uma nova doação:</p>
+            <a href="http://127.0.0.1:8000/doacoes/novo/" style="display: inline-block; background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Cadastrar Nova Doação</a>
+            <p>Atenciosamente,<br><strong>Equipe ReCo</strong></p>
+        </div>
+        <div class="footer">
+            <p>&copy; 2025 ReCo - Reutilizar e Conectar</p>
+        </div>
+    </div>
+</body>
+</html>

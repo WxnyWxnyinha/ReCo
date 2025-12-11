@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Relatório de Impacto Ambiental - ReCo{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Cabeçalho -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-0"><i class="fas fa-leaf text-success"></i> Relatório de Impacto Ambiental</h2>
+            <p class="text-muted">Métricas de sustentabilidade e impacto positivo</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'doacoes:reports_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtro de Período -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-10">
+                    <label for="period" class="form-label">Período de Análise</label>
+                    <select class="form-select" id="period" name="period">
+                        <option value="7" {% if period == '7' %}selected{% endif %}>Últimos 7 dias</option>
+                        <option value="30" {% if period == '30' %}selected{% endif %}>Últimos 30 dias</option>
+                        <option value="90" {% if period == '90' %}selected{% endif %}>Últimos 90 dias</option>
+                        <option value="365" {% if period == '365' %}selected{% endif %}>Último ano</option>
+                        <option value="all" {% if period == 'all' %}selected{% endif %}>Todo o período</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-filter"></i> Aplicar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Cards de Impacto Principal -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-weight fa-3x mb-3"></i>
+                    <h2 class="mb-2">{{ impact.kg_total }} kg</h2>
+                    <p class="mb-0">Resíduos Eletrônicos<br>Reutilizados</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-cloud fa-3x mb-3"></i>
+                    <h2 class="mb-2">{{ impact.co2_avoided|floatformat:0 }} kg</h2>
+                    <p class="mb-0">CO₂ Evitado<br>(Emissões)</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-dark h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-bolt fa-3x mb-3"></i>
+                    <h2 class="mb-2">{{ impact.energy_saved|floatformat:0 }} kWh</h2>
+                    <p class="mb-0">Energia<br>Economizada</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-tint fa-3x mb-3"></i>
+                    <h2 class="mb-2">{{ impact.water_saved|floatformat:0 }} L</h2>
+                    <p class="mb-0">Água<br>Economizada</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Equivalências -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-tree"></i> Equivalências Ambientais</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center p-3 bg-light rounded">
+                                <i class="fas fa-tree fa-3x text-success me-3"></i>
+                                <div>
+                                    <h4 class="mb-1">{{ impact.trees_saved|floatformat:1 }}</h4>
+                                    <p class="text-muted mb-0">Árvores preservadas (equivalente)</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="d-flex align-items-center p-3 bg-light rounded">
+                                <i class="fas fa-users fa-3x text-info me-3"></i>
+                                <div>
+                                    <h4 class="mb-1">{{ unique_beneficiaries }}</h4>
+                                    <p class="text-muted mb-0">Beneficiários impactados positivamente</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="alert alert-success mb-0">
+                        <h6 class="alert-heading"><i class="fas fa-info-circle"></i> Como Calculamos?</h6>
+                        <p class="mb-2"><strong>Resíduos:</strong> 3kg médio por item eletrônico reutilizado</p>
+                        <p class="mb-2"><strong>CO₂:</strong> 60kg de CO₂ evitado por kg de eletrônico reciclado</p>
+                        <p class="mb-2"><strong>Energia:</strong> 15 kWh economizados por kg</p>
+                        <p class="mb-2"><strong>Água:</strong> 500 litros economizados por kg</p>
+                        <p class="mb-0"><strong>Árvores:</strong> 0.05 árvores preservadas por kg</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de Evolução Mensal -->
+    {% if monthly_data %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-chart-line"></i> Evolução Mensal do Impacto</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="monthlyChart" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Impacto por Condição -->
+    {% if impact_by_condition %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-cog"></i> Impacto por Condição do Item</h5>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Condição</th>
+                                <th class="text-center">Quantidade</th>
+                                <th class="text-end">Peso (kg)</th>
+                                <th class="text-end">CO₂ Evitado (kg)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in impact_by_condition %}
+                                <tr>
+                                    <td>
+                                        {% if item.condition == 'funcionando' %}
+                                            <span class="badge bg-success">Funcionando</span>
+                                        {% elif item.condition == 'para_reparo' %}
+                                            <span class="badge bg-warning">Para Reparo</span>
+                                        {% elif item.condition == 'para_pecas' %}
+                                            <span class="badge bg-info">Para Peças</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ item.condition }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">{{ item.count }}</td>
+                                    <td class="text-end">{{ item.kg }} kg</td>
+                                    <td class="text-end">{{ item.co2|floatformat:0 }} kg</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td>Total</td>
+                                <td class="text-center">{{ total_delivered }}</td>
+                                <td class="text-end">{{ impact.kg_total }} kg</td>
+                                <td class="text-end">{{ impact.co2_avoided|floatformat:0 }} kg</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Call to Action -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card bg-light border-success">
+                <div class="card-body text-center">
+                    <h4 class="text-success mb-3">Continue Fazendo a Diferença!</h4>
+                    <p class="lead">Cada doação conta para um futuro mais sustentável.</p>
+                    <a href="{% url 'doacoes:index' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-plus-circle"></i> Criar Nova Doação
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+{% if monthly_data %}
+const monthlyCtx = document.getElementById('monthlyChart');
+new Chart(monthlyCtx, {
+    type: 'line',
+    data: {
+        labels: {{ monthly_data|safe|map:"month"|list|safe }},
+        datasets: [
+            {
+                label: 'CO₂ Evitado (kg)',
+                data: {{ monthly_data|map:"co2"|list }},
+                borderColor: 'rgba(25, 135, 84, 1)',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                tension: 0.4,
+                fill: true
+            },
+            {
+                label: 'Peso Total (kg)',
+                data: {{ monthly_data|map:"kg"|list }},
+                borderColor: 'rgba(13, 202, 240, 1)',
+                backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                tension: 0.4,
+                fill: true
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'top'
+            },
+            title: {
+                display: true,
+                text: 'Evolução do Impacto Ambiental'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %}

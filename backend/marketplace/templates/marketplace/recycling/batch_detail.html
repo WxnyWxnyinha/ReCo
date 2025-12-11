@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}Lote {{ batch.batch_code }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+<div class="container d-flex flex-column gap-4">
+  <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h1 class="h3 mb-1">Lote {{ batch.batch_code }}</h1>
+      <p class="text-muted mb-0">Parceiro: {{ batch.partner.company_name }}</p>
+    </div>
+    <a class="btn btn-outline-secondary" href="{% url 'doacoes:recycling_dashboard' %}">Voltar</a>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-lg-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column gap-3">
+          <div>
+            <p class="text-muted mb-1">Status</p>
+            <span class="badge bg-primary">{{ batch.get_status_display }}</span>
+          </div>
+          <div>
+            <p class="text-muted mb-1">Peso</p>
+            <h4 class="mb-0">{{ batch.actual_weight_kg|default_if_none:batch.estimated_weight_kg|floatformat:1 }} kg</h4>
+            <small class="text-muted">Estimado: {{ batch.estimated_weight_kg|floatformat:1 }} kg</small>
+          </div>
+          <div>
+            <p class="text-muted mb-1">Impacto estimado</p>
+            <ul class="list-unstyled mb-0 small">
+              <li>CO₂ evitado: {{ impact.co2_avoided_kg|floatformat:1 }} kg</li>
+              <li>Energia: {{ impact.energy_saved_kwh|floatformat:1 }} kWh</li>
+              <li>Água: {{ impact.water_saved_liters|floatformat:0 }} L</li>
+              <li>Árvores: {{ impact.trees_preserved|floatformat:2 }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="card shadow-sm mb-3">
+        <div class="card-body">
+          <h5 class="mb-3">Itens do lote ({{ batch.total_items }})</h5>
+          {% if batch.items.all %}
+          <div class="table-responsive">
+            <table class="table align-middle">
+              <thead><tr><th>Título</th><th>Condição</th><th>Status</th></tr></thead>
+              <tbody>
+                {% for item in batch.items.all %}
+                  <tr>
+                    <td>{{ item.title }}</td>
+                    <td>{{ item.get_condition_display }}</td>
+                    <td><span class="badge bg-secondary">{{ item.get_status_display }}</span></td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+            <p class="text-muted mb-0">Nenhum item vinculado.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Atualizar status</h5>
+            <span class="text-muted small">Sequência: Criado → Coletado → Enviado → Processado → Certificado</span>
+          </div>
+          <form method="post" action="{% url 'doacoes:recycling_update_batch_status' batch.pk %}" class="row g-3 align-items-end">
+            {% csrf_token %}
+            <div class="col-sm-4">
+              <label class="form-label">Novo status</label>
+              <select class="form-select" name="status" required>
+                <option value="" selected disabled>Escolha</option>
+                <option value="coletado">Coletado</option>
+                <option value="enviado">Enviado ao reciclador</option>
+                <option value="processado">Processado</option>
+                <option value="certificado">Certificado</option>
+              </select>
+            </div>
+            <div class="col-sm-4">
+              <label class="form-label">Peso real (kg)</label>
+              <input class="form-control" type="number" step="0.1" name="actual_weight" placeholder="Opcional ao processar">
+            </div>
+            <div class="col-sm-4 text-end">
+              <button class="btn btn-primary" type="submit">Salvar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="mb-3">Certificado</h5>
+          <form method="post" action="{% url 'doacoes:recycling_upload_certificate' batch.pk %}" enctype="multipart/form-data" class="row g-3 align-items-end">
+            {% csrf_token %}
+            <div class="col-md-5">
+              <label class="form-label">Número do certificado</label>
+              <input class="form-control" type="text" name="certificate_number" value="{{ batch.certificate_number }}" placeholder="Ex.: REC-2025/0001">
+            </div>
+            <div class="col-md-5">
+              <label class="form-label">Arquivo</label>
+              <input class="form-control" type="file" name="certificate_file" accept="application/pdf,image/*">
+            </div>
+            <div class="col-md-2 text-end">
+              <button class="btn btn-outline-primary w-100" type="submit">Enviar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+{% endblock %}

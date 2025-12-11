@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Doações — ReCo{% endblock %}
+
+{% block content %}
+  <div class="container-fluid mt-4">
+  <div class="container d-flex flex-column gap-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+      <div>
+        <h1 class="h3 mb-2">Doações</h1>
+        <p class="text-muted mb-0">Filtre por cidade, estado de conservação ou palavras-chave para encontrar a doação certa.</p>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-outline-secondary" href="{% url 'doacoes:chats' %}">Meus chats</a>
+        {% if user.is_authenticated %}
+          <a class="btn btn-primary" href="{% url 'doacoes:create' %}">Anunciar item</a>
+        {% else %}
+          <a class="btn btn-primary" href="{% url 'usuario:login' %}">Entrar para anunciar</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <form class="filter-bar" method="get">
+      <div class="flex-grow-1">
+        <label class="form-label">Buscar</label>
+        <input class="form-control" type="text" name="q" value="{{ filters.search }}" placeholder="Ex.: notebook, placa, monitor">
+      </div>
+      <div>
+        <label class="form-label">Condição</label>
+        <select class="form-select" name="condition">
+          <option value="">Todas</option>
+          {% for value, label in condition_choices %}
+            <option value="{{ value }}" {% if filters.condition == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Cidade</label>
+        <select class="form-select" name="city">
+          <option value="">Todas</option>
+          {% for city in city_choices %}
+            <option value="{{ city }}" {% if filters.city == city %}selected{% endif %}>{{ city }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Ordenar por</label>
+        <select class="form-select" name="order">
+          <option value="recent" {% if filters.order == 'recent' %}selected{% endif %}>Mais recentes</option>
+          <option value="oldest" {% if filters.order == 'oldest' %}selected{% endif %}>Mais antigos</option>
+          <option value="name" {% if filters.order == 'name' %}selected{% endif %}>Nome</option>
+        </select>
+      </div>
+      <div>
+        <button class="btn btn-secondary" type="submit">Aplicar filtros</button>
+      </div>
+    </form>
+
+    {% if donations %}
+      <div class="donation-grid">
+        {% for donation in donations %}
+          <a href="{% url 'doacoes:detail' donation.pk %}" class="donation-grid-item">
+            <div class="donation-grid-image">
+              {% if donation.image %}
+                <img src="{{ donation.image.url }}" alt="Imagem de {{ donation.title }}">
+              {% else %}
+                <div class="placeholder-image">
+                  <i class="fas fa-image"></i>
+                </div>
+              {% endif %}
+            </div>
+            <div class="donation-grid-info">
+              <h3>{{ donation.title|truncatewords:6 }}</h3>
+              <p class="condition">{{ donation.get_condition_display }}</p>
+              <p class="city">{{ donation.city|default:'Cidade não informada' }}</p>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <section class="section-card text-center">
+        <h2 class="h4">Ainda não temos itens nesse filtro</h2>
+        <p class="text-muted">Remova alguns filtros ou volte mais tarde para ver novos anúncios.</p>
+        {% if user.is_authenticated %}
+          <a class="btn btn-primary" href="{% url 'doacoes:create' %}">Anunciar o primeiro item</a>
+        {% endif %}
+      </section>
+    {% endif %}
+  </div>
+  </div>
+{% endblock %}
