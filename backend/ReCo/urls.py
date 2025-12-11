@@ -24,6 +24,7 @@ from . import views
 urlpatterns = [
     path('', views.index, name='home'),
     path('privacidade/', views.privacy_policy, name='privacy_policy'),
+    path('ping', views.ping, name='ping'),
     path('doacoes/', include('marketplace.urls')),
     path('usuario/', include('usuario.urls')),
     path('perfil/', include('perfil.urls')),

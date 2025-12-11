@@ -13,6 +13,9 @@
       <div class="d-flex gap-2 flex-wrap">
         <a class="btn btn-outline-secondary" href="{% url 'doacoes:chats' %}">Meus chats</a>
         {% if user.is_authenticated %}
+          {% if user_has_donations %}
+            <a class="btn btn-outline-secondary" href="{% url 'doacoes:my_donations' %}">Minhas doações</a>
+          {% endif %}
           <a class="btn btn-primary" href="{% url 'doacoes:create' %}">Anunciar item</a>
         {% else %}
           <a class="btn btn-primary" href="{% url 'usuario:login' %}">Entrar para anunciar</a>

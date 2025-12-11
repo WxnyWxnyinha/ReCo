@@ -45,6 +45,11 @@ def index(request):
         .order_by('city')
     )
 
+    # Verificar se o usuário autenticado tem doações
+    user_has_donations = False
+    if request.user.is_authenticated:
+        user_has_donations = Donation.objects.filter(donor=request.user).exists()
+
     context = {
         'donations': donations.select_related('donor'),
         'filters': {
@@ -55,6 +60,7 @@ def index(request):
         },
         'city_choices': city_choices,
         'condition_choices': Donation.CONDITION_CHOICES,
+        'user_has_donations': user_has_donations,
     }
     return render(request, 'marketplace/index.html', context)
 

@@ -20,7 +20,7 @@ class RegisterForm(UserCreationForm):
     razao_social = forms.CharField(label='Razão social', required=False)
     birth_date = forms.CharField(
         label='Data de nascimento (dd/mm/aaaa)',
-        required=False,
+        required=True,
         widget=forms.TextInput(attrs={'placeholder': 'dd/mm/aaaa'})
     )
     consent_privacy = forms.BooleanField(
@@ -90,6 +90,9 @@ class RegisterForm(UserCreationForm):
                 cleaned['birth_date'] = dt
             except ValueError:
                 self.add_error('birth_date', 'Data deve estar no formato dd/mm/aaaa.')
+        else:
+            # Obrigatório agora
+            self.add_error('birth_date', 'Data de nascimento é obrigatória.')
 
         return cleaned
 

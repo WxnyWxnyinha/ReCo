@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 
 from django import forms
@@ -60,16 +61,26 @@ class ProfileForm(forms.ModelForm):
         cleaned = super().clean()
         cpf_cnpj = cleaned.get('cpf_cnpj') or ''
         razao = cleaned.get('razao_social') or ''
+        user_type = cleaned.get('user_type')
 
         # Se já existe documento salvo, preserva valor original (mesmo que o campo venha vazio por estar disabled)
         if self.instance and self.instance.cpf_cnpj:
             cleaned['cpf_cnpj'] = self.instance.cpf_cnpj
+            cpf_cnpj = self.instance.cpf_cnpj
 
-        digits = ''.join(ch for ch in cpf_cnpj if ch.isdigit())
+        digits = re.sub(r'\D', '', cpf_cnpj)
 
-        if digits and len(digits) == 11 and razao:
-            self.add_error('razao_social', 'Razão social só pode ser informada para CNPJ.')
-            cleaned['razao_social'] = ''
+        # Validação para Empresa/ONG
+        if user_type == 'pj':
+            if digits and len(digits) != 14:
+                self.add_error('cpf_cnpj', 'Empresa/ONG deve ter CNPJ com 14 dígitos, não CPF.')
+            if not razao:
+                self.add_error('razao_social', 'Razão social é obrigatória para Empresas/ONGs.')
+        else:
+            # Para outros tipos, não pode ter razão social se for CPF
+            if digits and len(digits) == 11 and razao:
+                self.add_error('razao_social', 'Razão social só pode ser informada para CNPJ.')
+                cleaned['razao_social'] = ''
 
         return cleaned
 

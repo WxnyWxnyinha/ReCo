@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_http_methods
 
-from .models import Donation, DonationRequest
+from .models import Donation, DonationRequest, Delivery
 from .forms import DonationRequestForm
 from .notifications import notify_new_request, notify_request_approved, notify_request_rejected
 
@@ -158,6 +158,7 @@ def my_donations(request):
 def approve_request(request, pk):
     """
     Admin aprova uma solicitação (POST only)
+    Atualiza status da doação para 'em_rota' e cria uma Delivery
     """
     donation_request = get_object_or_404(DonationRequest, pk=pk)
     
@@ -165,10 +166,19 @@ def approve_request(request, pk):
     donation_request.approved_by = request.user
     donation_request.save()
     
+    # Atualizar status da doação para 'em_rota'
+    donation = donation_request.donation
+    donation.beneficiary = donation_request.beneficiary
+    donation.status = 'em_rota'
+    donation.save()
+    
+    # Criar uma Delivery para o admin atribuir transportador
+    Delivery.objects.get_or_create(donation=donation)
+    
     # Notificar beneficiário
     notify_request_approved(donation_request)
     
-    messages.success(request, 'Solicitação aprovada e beneficiário notificado!')
+    messages.success(request, 'Solicitação aprovada! A doação agora está em rota e aguarda atribuição de transportador.')
     return redirect('doacoes:request_detail', pk=pk)
 
 
