@@ -15,14 +15,18 @@
           {% if request.GET.next %}
             <input type="hidden" name="next" value="{{ request.GET.next }}">
           {% endif %}
-          {% if messages %}
+          {% if messages or form.non_field_errors %}
             <div class="mb-3">
-              {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'danger' }}" role="alert">{{ message }}</div>
-              {% endfor %}
+              <div class="alert alert-danger p-3" role="alert">
+                {% for message in messages %}
+                  <div class="mb-1"><strong>{{ message.tags|capfirst }}:</strong> {{ message }}</div>
+                {% endfor %}
+                {% for err in form.non_field_errors %}
+                  <div class="mb-1">{{ err }}</div>
+                {% endfor %}
+              </div>
             </div>
           {% endif %}
-          {{ form.non_field_errors }}
 
           <div class="mb-3">
             <label class="form-label" for="{{ form.username.id_for_label }}">Usuário</label>

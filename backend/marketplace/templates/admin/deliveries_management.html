@@ -191,9 +191,14 @@
                                 </td>
                             {% endif %}
                             <td>
-                                <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#deliveryModal{{ delivery.pk }}" title="Ver detalhes">
-                                    <i class="fas fa-eye me-1"></i>Ver
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'doacoes:admin_assign_delivery' delivery.donation.pk %}" class="btn btn-sm btn-outline-warning" title="Atribuir transportador" {% if delivery.driver or delivery.is_recycling %}style="display:none;"{% endif %}>
+                                        <i class="fas fa-truck me-1"></i>Atribuir
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#deliveryModal{{ delivery.pk }}" title="Ver detalhes">
+                                        <i class="fas fa-eye me-1"></i>Ver
+                                    </button>
+                                </div>
                             </td>
                         </tr>
 

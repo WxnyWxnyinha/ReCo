@@ -266,14 +266,14 @@ def assign_delivery(request, donation_id):
     existing_delivery = Delivery.objects.filter(donation=donation).first()
     if existing_delivery:
         messages.warning(request, 'Esta doação já possui um delivery atribuído.')
-        return redirect('admin:admin_deliveries_management')
+        return redirect('doacoes:admin_deliveries_management')
     
     if request.method == 'POST':
         driver_id = request.POST.get('driver_id')
         
         if not driver_id:
             messages.error(request, 'Selecione um transportador.')
-            return redirect('admin:admin_deliveries_management')
+            return redirect('doacoes:admin_deliveries_management')
         
         try:
             driver = Profile.objects.get(pk=driver_id, user_type='transportador')
@@ -290,10 +290,10 @@ def assign_delivery(request, donation_id):
             donation.save()
             
             messages.success(request, f'Delivery atribuído a {driver.user.get_full_name() or driver.user.username}')
-            return redirect('admin:admin_deliveries_management')
+            return redirect('doacoes:admin_deliveries_management')
         except Profile.DoesNotExist:
             messages.error(request, 'Transportador não encontrado.')
-            return redirect('admin:admin_deliveries_management')
+            return redirect('doacoes:admin_deliveries_management')
     
     drivers = Profile.objects.filter(user_type='transportador', is_available=True).select_related('user')
     context = {
