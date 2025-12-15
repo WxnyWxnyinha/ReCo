@@ -132,7 +132,8 @@ def donations_management(request):
     # Preparar lista para template: anexar atributos úteis (evitar chamadas complexas no template)
     donations_list = []
     for donation in donations:
-        # usar propriedades de `Donation` no template (não sobrescrever o atributo)
+        # Sinalizar se já possui entrega criada (para lógica de exibição no template)
+        donation.has_delivery = Delivery.objects.filter(donation=donation).exists()
         donations_list.append(donation)
 
     context = {
@@ -262,10 +263,25 @@ def assign_delivery(request, donation_id):
     """
     donation = get_object_or_404(Donation, pk=donation_id)
     
-    # Verificar se já existe delivery
+    # Se já existir entrega com motorista, não permitir nova atribuição
     existing_delivery = Delivery.objects.filter(donation=donation).first()
-    if existing_delivery:
+    if existing_delivery and existing_delivery.driver:
         messages.warning(request, 'Esta doação já possui um delivery atribuído.')
+        return redirect('doacoes:admin_deliveries_management')
+
+    # Lista de transportadores disponíveis
+    available_drivers = list(Profile.objects.filter(user_type='transportador', is_available=True).select_related('user'))
+
+    # Auto-atribuir quando há exatamente um transportador e for GET
+    if request.method == 'GET' and len(available_drivers) == 1:
+        driver = available_drivers[0]
+        delivery = existing_delivery or Delivery(donation=donation)
+        delivery.driver = driver.user
+        delivery.status = 'atribuida'
+        delivery.save()
+        donation.status = 'em_rota'
+        donation.save()
+        messages.success(request, f'Delivery atribuído automaticamente a {driver.user.get_full_name() or driver.user.username}.')
         return redirect('doacoes:admin_deliveries_management')
     
     if request.method == 'POST':
@@ -277,13 +293,12 @@ def assign_delivery(request, donation_id):
         
         try:
             driver = Profile.objects.get(pk=driver_id, user_type='transportador')
-            
-            # Criar delivery
-            Delivery.objects.create(
-                donation=donation,
-                driver=driver.user,
-                status='atribuida'
-            )
+
+            # Criar ou atualizar delivery
+            delivery = existing_delivery or Delivery(donation=donation)
+            delivery.driver = driver.user
+            delivery.status = 'atribuida'
+            delivery.save()
             
             # Atualizar status da doação
             donation.status = 'em_rota'
@@ -295,7 +310,7 @@ def assign_delivery(request, donation_id):
             messages.error(request, 'Transportador não encontrado.')
             return redirect('doacoes:admin_deliveries_management')
     
-    drivers = Profile.objects.filter(user_type='transportador', is_available=True).select_related('user')
+    drivers = available_drivers
     context = {
         'donation': donation,
         'drivers': drivers,

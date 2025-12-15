@@ -190,7 +190,7 @@
                                     {% endif %}
 
                                     {# Atribuir transportador: disponível quando aprovada, não é reciclagem e ainda não tem entrega criada #}
-                                    {% if donation.status == 'aprovada' and not donation.is_recycling and not donation.delivery_set.all.0 %}
+                                    {% if donation.status == 'aprovada' and not donation.is_recycling and not donation.has_delivery %}
                                         <a href="{% url 'doacoes:admin_assign_delivery' donation.pk %}" class="btn btn-sm btn-outline-warning" title="Atribuir transportador">
                                             <i class="fas fa-truck me-1"></i>Atribuir
                                         </a>
