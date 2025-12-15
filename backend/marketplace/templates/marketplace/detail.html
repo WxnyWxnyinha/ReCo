@@ -14,14 +14,11 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
           <a class="btn btn-outline-secondary" href="{% url 'doacoes:index' %}">Voltar</a>
-          {% if user.is_authenticated %}
+          {% if can_chat %}
             <a class="btn btn-primary" href="{% url 'doacoes:chat' donation.pk %}">Abrir chat</a>
-            {% if user != donation.donor %}
-              <a class="btn btn-outline-success" href="{% url 'doacoes:my_donations' %}">Minhas Doações</a>
-            {% else %}
-              <a class="btn btn-outline-info" href="{% url 'doacoes:my_donations' %}">Gerenciar</a>
-            {% endif %}
-          {% else %}
+          {% elif user.is_authenticated and is_owner %}
+            <a class="btn btn-outline-info" href="{% url 'doacoes:my_donations' %}">Gerenciar</a>
+          {% elif not user.is_authenticated %}
             <a class="btn btn-primary" href="{% url 'usuario:login' %}">Entrar para conversar</a>
           {% endif %}
         </div>
@@ -36,7 +33,7 @@
       <p class="mt-3">{{ donation.description|default:"Sem descrição"|linebreaks }}</p>
 
       <!-- Botão Solicitar Doação -->
-      {% if user.is_authenticated and user != donation.donor %}
+      {% if can_request %}
         <div class="mt-4">
           {% if donation.status == 'aprovada' %}
             <a class="btn btn-success btn-lg" href="{% url 'doacoes:request_donation' donation.pk %}">

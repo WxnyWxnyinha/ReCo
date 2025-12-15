@@ -57,15 +57,45 @@
     </div>
   </header>
 
-  {% if messages %}
-    <div class="container message-stack">
+  {% if messages and request.resolver_match.url_name != 'register' and request.resolver_match.url_name != 'login' %}
+    <!-- Mostrar mensagens como toasts flutuantes em quase todas as páginas.
+         Exceto: mantenha o comportamento inline na página de cadastro (/usuario/register/)
+         para não interromper a UX do formulário de criação de conta. -->
+    <div id="global-toasts" aria-live="polite" aria-atomic="true">
       {% for message in messages %}
-        <div class="alert alert-{{ message.tags|default:'info' }} shadow-sm" role="alert">
-          {{ message }}
+        <div class="global-toast toast-{{ message.tags|default:'info' }}" data-delay="5000">
+          <div class="toast-body">{{ message }}</div>
+          <button class="toast-close" aria-label="Fechar">×</button>
         </div>
       {% endfor %}
     </div>
-  {% endif %}
+      <style>
+        #global-toasts { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%); z-index: 1200; display:flex; flex-direction:column; gap:0.5rem; width: min(720px, calc(100% - 2rem)); pointer-events: none; }
+        .global-toast { pointer-events: auto; background: #fff; border-radius: 8px; padding: 0.75rem 1rem; box-shadow: 0 6px 18px rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:space-between; gap:1rem; }
+        .global-toast .toast-body { flex:1; color:#000; font-size:0.95rem; }
+        .global-toast.toast-error { border-left: 4px solid #dc3545; }
+        .global-toast.toast-warning { border-left: 4px solid #ffc107; }
+        .global-toast.toast-success { border-left: 4px solid #198754; }
+        .global-toast.toast-info { border-left: 4px solid #0dcaf0; }
+        .toast-close { background: transparent; border: none; font-size: 1.2rem; line-height:1; color: #666; cursor: pointer; padding: 0.25rem 0.5rem; border-radius:6px; }
+        .toast-close:hover { background: rgba(0,0,0,0.03); }
+        @media (max-width:600px){ #global-toasts{width:calc(100% - 1rem);} }
+      </style>
+      <script>
+        (function(){
+          const toasts = Array.from(document.querySelectorAll('#global-toasts .global-toast'));
+          toasts.forEach(t=>{
+            const delay = parseInt(t.dataset.delay) || 4000;
+            const closeBtn = t.querySelector('.toast-close');
+            let timer = setTimeout(()=> hideToast(t), delay);
+            function hideToast(el){ el.style.transition = 'opacity 240ms ease, transform 240ms ease'; el.style.opacity = '0'; el.style.transform = 'translateY(-8px)'; setTimeout(()=> el.remove(), 260); }
+            closeBtn.addEventListener('click', ()=>{ clearTimeout(timer); hideToast(t); });
+            // small entrance animation
+            t.style.opacity = '0'; t.style.transform = 'translateY(-8px)'; requestAnimationFrame(()=>{ t.style.transition='opacity 240ms ease, transform 240ms ease'; t.style.opacity='1'; t.style.transform='translateY(0)'; });
+          });
+        })();
+      </script>
+    {% endif %}
 
   <main class="site-main" id="conteudo-principal">
     {% block content %}{% endblock %}

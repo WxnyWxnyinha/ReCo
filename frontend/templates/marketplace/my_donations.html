@@ -139,7 +139,7 @@
                                         <i class="fas fa-trash"></i>Excluir
                                     </a>
                                 {% endif %}
-                                {% if donation.approved_requests_count > 0 %}
+                                {% if donation.can_chat %}
                                     <a href="{% url 'doacoes:chat' donation.pk %}" class="btn btn-sm btn-success">
                                         <i class="fas fa-comments"></i>Conversar
                                     </a>

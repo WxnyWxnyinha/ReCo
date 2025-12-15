@@ -15,6 +15,13 @@
           {% if request.GET.next %}
             <input type="hidden" name="next" value="{{ request.GET.next }}">
           {% endif %}
+          {% if messages %}
+            <div class="mb-3">
+              {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'danger' }}" role="alert">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
           {{ form.non_field_errors }}
 
           <div class="mb-3">

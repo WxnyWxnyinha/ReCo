@@ -13,6 +13,8 @@ urlpatterns = [
     # Listagem e detalhes de doações
     path('', views.index, name='index'),
     path('novo/', views.create, name='create'),
+    # Compatibilidade: aceitar /create e redirecionar para /novo/
+    path('create/', views.create_redirect, name='create_alias'),
     path('<int:pk>/', views.detail, name='detail'),
     path('<int:pk>/editar/', views.edit_donation, name='edit_donation'),
     path('<int:pk>/excluir/', views.delete_donation, name='delete_donation'),

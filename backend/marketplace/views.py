@@ -15,8 +15,14 @@ User = get_user_model()
 
 def index(request):
     """Listar anúncios com filtros simples de busca, condição e cidade."""
-    # Apenas doações aprovadas ou entregues são visíveis para usuários comuns
-    donations = Donation.objects.filter(is_available=True, status__in=['aprovada', 'entregue'])
+    # Excluir doações que já foram entregues, reprovadas (reciclagem) ou que estão em análise
+    # Excluir entregues, em rota, marcadas para reciclagem (status ou associadas a lote) e pendentes
+    donations = (
+        Donation.objects.filter(is_available=True)
+        .exclude(status__in=['entregue', 'em_rota', 'reciclagem', 'pendente'])
+        .exclude(recycling_batches__isnull=False)
+        .distinct()
+    )
     search = (request.GET.get('q') or '').strip()
     condition = request.GET.get('condition') or ''
     city = (request.GET.get('city') or '').strip()
@@ -65,6 +71,11 @@ def index(request):
     return render(request, 'marketplace/index.html', context)
 
 
+def create_redirect(request):
+    """Compatibilidade com URLs antigas: redireciona /doacoes/create -> novo/"""
+    return redirect('/doacoes/novo/')
+
+
 @login_required(login_url='usuario:login')
 def create(request):
     """Criar um novo anúncio de doação."""
@@ -82,6 +93,17 @@ def create(request):
     if request.method == 'POST':
         form = DonationForm(request.POST, request.FILES)
         if form.is_valid():
+            # Anti-duplicação: evita criar anúncio com mesmo título pelo mesmo usuário
+            title = (form.cleaned_data.get('title') or '').strip()
+            duplicate_exists = Donation.objects.filter(
+                donor=request.user,
+                title__iexact=title,
+                status__in=['pendente', 'aprovada', 'em_rota'],
+            ).exists()
+            if duplicate_exists:
+                messages.error(request, 'Você já possui um anúncio semelhante ativo ou em análise. Evite duplicar anúncios.')
+                return render(request, 'marketplace/create.html', {'form': form})
+
             donation = form.save(commit=False)
             donation.donor = request.user
             donation.save()
@@ -98,16 +120,64 @@ def detail(request, pk):
         Donation.objects.select_related('donor'),
         pk=pk,
     )
+    # Relacionados visíveis (mesmos filtros do feed)
     related = (
         Donation.objects.filter(is_available=True)
         .exclude(pk=pk)
+        .exclude(status__in=['entregue', 'em_rota', 'reciclagem', 'pendente'])
+        .exclude(recycling_batches__isnull=False)
+        .distinct()
         .order_by('-created_at')[:3]
     )
-    return render(
-        request,
-        'marketplace/detail.html',
-        {'donation': donation, 'related': related},
-    )
+
+    # Permissões de UI: dono pode abrir chats com interessados; outros só se forem participantes
+    is_owner = request.user.is_authenticated and donation.donor == request.user
+    participants = list(_participants_for_donation(donation)) if is_owner else list(_participants_for_donation(donation)) if request.user.is_authenticated and request.user in _participants_for_donation(donation) else []
+
+    can_chat = False
+    if request.user.is_authenticated:
+        # Administradores podem abrir chat com o doador para suporte
+        if request.user.is_staff or request.user.is_superuser:
+            can_chat = True
+        elif is_owner:
+            # dono sempre vê o link para abrir a área de chat (seleciona participante depois)
+            can_chat = True
+        else:
+            # Interessados do tipo beneficiário ou PJ podem iniciar conversa para tirar dúvidas
+            try:
+                ut = request.user.profile.user_type
+            except Exception:
+                ut = None
+            if ut in ('beneficiario', 'pj') and donation.is_available and donation.status not in ['entregue', 'reciclagem', 'em_rota'] and not donation.recycling_batches.exists():
+                can_chat = True
+            else:
+                # interessado só vê chat se já for participante (mensagens ou solicitação aprovada)
+                can_chat = request.user in participants
+
+    # Beneficiário/ONG/PJ podem solicitar o item (apenas estes tipos), e somente se estiver disponível
+    can_request = False
+    try:
+        user_type = request.user.profile.user_type if request.user.is_authenticated else None
+    except Exception:
+        user_type = None
+    if (
+        request.user.is_authenticated
+        and not is_owner
+        and user_type in ('beneficiario', 'pj')
+        and donation.is_available
+        and donation.status not in ['entregue', 'reciclagem', 'em_rota']
+        and not donation.recycling_batches.exists()
+    ):
+        can_request = True
+
+    context = {
+        'donation': donation,
+        'related': related,
+        'is_owner': is_owner,
+        'can_chat': can_chat,
+        'can_request': can_request,
+    }
+    return render(request, 'marketplace/detail.html', context)
 
 
 @login_required(login_url='usuario:login')
@@ -360,19 +430,19 @@ def select_beneficiary(request, donation_pk, beneficiary_pk):
         messages.error(request, 'Este beneficiário não tem solicitação aprovada para este item.')
         return redirect('doacoes:chat', pk=donation.pk)
     
-    # Marca o beneficiário escolhido
+    # Marca o beneficiário escolhido — o doador libera o item para este beneficiário
     donation.beneficiary = beneficiary
-    donation.status = 'em_rota'  # Muda para em_rota para admin processar logística
     donation.save()
-    
-    # Atualiza a solicitação para 'entregue' (será entregue pelo admin)
-    donation_request.status = 'entregue'
+
+    # Atualiza a solicitação para 'aprovada' pelo doador; o admin precisa finalizar a aprovação/elogística
+    donation_request.status = 'aprovada'
+    donation_request.approved_by = request.user
     donation_request.save()
-    
+
     messages.success(
         request,
-        f'Doação confirmada para {beneficiary.get_full_name() or beneficiary.username}! '
-        f'O administrador vai processar a logística de entrega.'
+        f'Você selecionou {beneficiary.get_full_name() or beneficiary.username} como beneficiário. ' 
+        'Aguardando aprovação final do administrador para processar a logística.'
     )
-    
+
     return redirect('doacoes:chat', pk=donation.pk)

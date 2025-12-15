@@ -28,6 +28,20 @@ def request_donation(request, pk):
     if donation.donor == request.user:
         messages.error(request, 'Você não pode solicitar sua própria doação.')
         return redirect('doacoes:detail', pk=pk)
+
+    # Permitir solicitação apenas para beneficiários e pessoas jurídicas (ONG/empresa)
+    try:
+        user_type = request.user.profile.user_type
+    except Exception:
+        user_type = None
+    if user_type not in ('beneficiario', 'pj'):
+        messages.error(request, 'Apenas beneficiários ou organizações (PJ/ONG) podem solicitar uma doação.')
+        return redirect('doacoes:detail', pk=pk)
+
+    # Somente itens disponíveis e não marcados para reciclagem podem ser solicitados
+    if not donation.is_available or donation.status in ('entregue', 'reciclagem') or donation.recycling_batches.exists():
+        messages.error(request, 'Este item não está disponível para solicitação.')
+        return redirect('doacoes:detail', pk=pk)
     
     # Verificar se já existe solicitação
     existing_request = DonationRequest.objects.filter(
@@ -130,6 +144,12 @@ def my_donations(request):
     # Adiciona count de aprovadas em cada doação
     for donation in donations:
         donation.approved_requests_count = donation.requests.filter(status='aprovada').count()
+        # Permissão de chat: admin sempre; dono vê chat se houver interessados ou histórico de mensagens
+        donation.can_chat = (
+            request.user.is_staff
+            or donation.approved_requests_count > 0
+            or donation.messages.exists()
+        )
     
     # Estatísticas
     stats = {

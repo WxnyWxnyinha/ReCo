@@ -14,11 +14,7 @@
           {% endif %}
         </div>
         <div class="d-flex gap-2 flex-wrap">
-          {% if is_owner and active_participant and not donation.beneficiary %}
-            <a href="{% url 'doacoes:select_beneficiary' donation.pk active_participant.pk %}" class="btn btn-success" onclick="return confirm('Confirma que deseja doar este item para {{ active_participant.get_full_name|default:active_participant.username }}?')">
-              <i class="fas fa-gift me-1"></i>Doar para esta pessoa
-            </a>
-          {% elif is_owner and donation.beneficiary %}
+          {% if is_owner and donation.beneficiary %}
             <div class="alert alert-success mb-0 py-2 px-3">
               <i class="fas fa-check-circle me-1"></i>
               <strong>Doação confirmada para {{ donation.beneficiary.get_full_name|default:donation.beneficiary.username }}</strong>

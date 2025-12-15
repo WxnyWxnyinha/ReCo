@@ -220,11 +220,17 @@ const monthlyCtx = document.getElementById('monthlyChart');
 new Chart(monthlyCtx, {
     type: 'line',
     data: {
-        labels: {{ monthly_data|safe|map:"month"|list|safe }},
+        labels: [
+            {% for m in monthly_data %}
+                "{{ m.month }}"{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        ],
         datasets: [
             {
                 label: 'CO₂ Evitado (kg)',
-                data: {{ monthly_data|map:"co2"|list }},
+                data: [
+                    {% for m in monthly_data %}{{ m.co2 }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                ],
                 borderColor: 'rgba(25, 135, 84, 1)',
                 backgroundColor: 'rgba(25, 135, 84, 0.1)',
                 tension: 0.4,
@@ -232,7 +238,9 @@ new Chart(monthlyCtx, {
             },
             {
                 label: 'Peso Total (kg)',
-                data: {{ monthly_data|map:"kg"|list }},
+                data: [
+                    {% for m in monthly_data %}{{ m.kg }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                ],
                 borderColor: 'rgba(13, 202, 240, 1)',
                 backgroundColor: 'rgba(13, 202, 240, 0.1)',
                 tension: 0.4,
