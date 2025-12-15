@@ -30,6 +30,11 @@
   <div class="card shadow-sm mb-4">
     <div class="card-body">
       <h5 class="mb-3">Atualizar status</h5>
+      {% if delivery.is_recycling %}
+        <div class="alert alert-info">
+          <strong>Coleta Própria por Parceiro:</strong> Este item faz parte de um lote de reciclagem. O fluxo de status é gerenciado pelo lote (Criado → Coletado → Enviado → Processado → Certificado) e não via entregador.
+        </div>
+      {% else %}
       <form method="post" action="{% url 'doacoes:driver_update_delivery_status' delivery.pk %}" class="row g-3">
         {% csrf_token %}
         <div class="col-md-4">
@@ -54,6 +59,7 @@
           <button class="btn btn-primary" type="submit">Salvar</button>
         </div>
       </form>
+      {% endif %}
     </div>
   </div>
 

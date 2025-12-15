@@ -17,7 +17,10 @@
                 <!-- Informações da Doação -->
                 <div class="alert alert-info" role="alert">
                     <h5 class="alert-heading">Doação</h5>
-                    <p class="mb-1"><strong>{{ donation.title }}</strong></p>
+                    <p class="mb-1"><strong>{{ donation.title }}</strong> {% if donation.is_recycling %}<span class="badge bg-secondary ms-2">Reciclagem</span>{% endif %}</p>
+                    {% if donation.is_recycling and donation.recycling_partner_name %}
+                        <p class="mb-1 text-muted small">Parceiro: {{ donation.recycling_partner_name }}</p>
+                    {% endif %}
                     <p class="text-muted mb-0">{{ donation.description|truncatewords:15 }}</p>
                 </div>
 

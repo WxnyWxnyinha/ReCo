@@ -68,6 +68,17 @@ def index(request):
 @login_required(login_url='usuario:login')
 def create(request):
     """Criar um novo anúncio de doação."""
+    # Permitir criação apenas por usuários do tipo 'doador'
+    user_type = None
+    try:
+        user_type = getattr(request.user, 'profile', None) and request.user.profile.user_type
+    except Exception:
+        user_type = None
+
+    if user_type != 'doador':
+        messages.error(request, 'Apenas usuários do tipo Doador podem cadastrar doações.')
+        return redirect('doacoes:index')
+
     if request.method == 'POST':
         form = DonationForm(request.POST, request.FILES)
         if form.is_valid():

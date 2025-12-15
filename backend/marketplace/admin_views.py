@@ -43,7 +43,8 @@ def dashboard(request):
         
         # Entregas
         'total_deliveries': Delivery.objects.count(),
-        'pending_deliveries': Delivery.objects.filter(status__in=['atribuida', 'coletada', 'em_transito']).count(),
+        # Contamos como pendentes apenas entregas que já foram coletadas ou estão em trânsito
+        'pending_deliveries': Delivery.objects.filter(status__in=['coletada', 'em_transito']).count(),
         'delivered': Delivery.objects.filter(status='entregue').count(),
         'deliveries_this_month': Delivery.objects.filter(created_at__gte=thirty_days_ago).count(),
         
@@ -66,9 +67,34 @@ def dashboard(request):
     stats['estimated_co2_saved'] = estimated_co2_saved
     
     # Widgets para ações rápidas
-    pending_donations = Donation.objects.filter(status='pendente').select_related('donor')[:5]
+    pending_qs = Donation.objects.filter(status='pendente').select_related('donor')[:5]
+    # Anexar flags de reciclagem para uso no template
+    pending_donations = []
+    for pd in pending_qs:
+        is_recycling = pd.recycling_batches.exists()
+        recycling_partner_name = None
+        if is_recycling:
+            latest_batch = pd.recycling_batches.order_by('-created_at').first()
+            if latest_batch and latest_batch.partner:
+                recycling_partner_name = latest_batch.partner.company_name
+        pd.is_recycling = is_recycling
+        pd.recycling_partner_name = recycling_partner_name
+        pending_donations.append(pd)
     pending_requests = DonationRequest.objects.filter(status='pendente').select_related('donation', 'beneficiary')[:5]
-    active_deliveries = Delivery.objects.filter(status__in=['atribuida', 'coletada', 'em_transito']).select_related('donation', 'driver')[:5]
+    # Mostrar apenas entregas efetivamente coletadas ou em trânsito — esconder atribuídas
+    # Mostrar entregas que já foram coletadas, estão em trânsito ou cujo donation está 'em_rota'
+    active_deliveries_qs = Delivery.objects.filter(
+        Q(status__in=['coletada', 'em_transito']) | Q(donation__status='em_rota')
+    ).select_related('donation', 'driver').order_by('-created_at')[:5]
+
+    # Anexar label de exibição (mostrar 'Em Rota' quando aplicável)
+    active_deliveries = []
+    for ad in active_deliveries_qs:
+        if getattr(ad, 'donation', None) and ad.donation.status == 'em_rota':
+            ad.display_status_label = 'Em Rota'
+        else:
+            ad.display_status_label = ad.get_status_display()
+        active_deliveries.append(ad)
     
     context = {
         'stats': stats,
@@ -110,8 +136,21 @@ def donations_management(request):
         'canceled': Donation.objects.filter(status='cancelada').count(),
     }
     
+    # Preparar lista para template: anexar atributos úteis (evitar chamadas complexas no template)
+    donations_list = []
+    for donation in donations:
+        is_recycling = donation.recycling_batches.exists()
+        recycling_partner_name = None
+        if is_recycling:
+            latest_batch = donation.recycling_batches.order_by('-created_at').first()
+            if latest_batch and latest_batch.partner:
+                recycling_partner_name = latest_batch.partner.company_name
+        donation.is_recycling = is_recycling
+        donation.recycling_partner_name = recycling_partner_name
+        donations_list.append(donation)
+
     context = {
-        'donations': donations,
+        'donations': donations_list,
         'stats': stats,
         'status_filter': status_filter,
         'condition_filter': condition_filter,
@@ -170,8 +209,11 @@ def deliveries_management(request):
     """
     Gerenciamento de entregas
     """
-    deliveries = Delivery.objects.select_related(
-        'donation', 'driver'
+    # Excluir entregas apenas atribuídas (aguardando coleta) para que não apareçam antes do 'pegar'
+    # Incluir entregas cujo donation está em_rota (mostrar como 'Em Rota'), e também
+    # outras entregas que já foram coletadas/em_transito/entregues
+    deliveries = Delivery.objects.select_related('donation', 'driver').filter(
+        Q(status__in=['coletada', 'em_transito', 'entregue', 'cancelada']) | Q(donation__status='em_rota')
     ).order_by('-created_at')
     
     # Filtros
@@ -186,7 +228,8 @@ def deliveries_management(request):
     # Contadores
     stats = {
         'total': Delivery.objects.count(),
-        'pending': Delivery.objects.filter(status__in=['atribuida', 'coletada']).count(),
+        # Pending inclui items em_rota (doação em rota) ou coletados/em_transito
+        'pending': Delivery.objects.filter(Q(donation__status='em_rota') | Q(status__in=['coletada',])).count(),
         'in_transit': Delivery.objects.filter(status='em_transito').count(),
         'delivered': Delivery.objects.filter(status='entregue').count(),
         'canceled': Delivery.objects.filter(status='cancelada').count(),
@@ -194,16 +237,35 @@ def deliveries_management(request):
     
     # Lista de drivers disponíveis
     drivers = Profile.objects.filter(user_type='transportador', is_available=True).select_related('user')
-    
+
+    # Preparar ítens para template: marcar se pertencem a lote de reciclagem, nome do parceiro
+    deliveries_list = []
+    for d in deliveries:
+        # evitar queries pesadas no template; anexar atributos úteis
+        is_recycling = d.donation.recycling_batches.exists()
+        recycling_partner_name = None
+        if is_recycling:
+            latest_batch = d.donation.recycling_batches.order_by('-created_at').first()
+            if latest_batch and latest_batch.partner:
+                recycling_partner_name = latest_batch.partner.company_name
+        d.is_recycling = is_recycling
+        d.recycling_partner_name = recycling_partner_name
+        # display_status: se donation está em_rota, apresentar 'Em Rota'
+        if d.donation and d.donation.status == 'em_rota':
+            d.display_status_label = 'Em Rota'
+        else:
+            d.display_status_label = d.get_status_display()
+        deliveries_list.append(d)
+
     context = {
-        'deliveries': deliveries,
+        'deliveries': deliveries_list,
         'stats': stats,
         'status_filter': status_filter,
         'driver_filter': driver_filter,
         'status_choices': Delivery.STATUS_CHOICES,
         'drivers': drivers,
     }
-    
+
     return render(request, 'admin/deliveries_management.html', context)
 
 
@@ -291,4 +353,20 @@ def approve_donation(request, pk):
         return redirect('doacoes:admin_donations_management')
     
     # Se não for POST, redireciona de volta
+    return redirect('doacoes:admin_donations_management')
+
+
+@user_passes_test(is_admin, login_url='usuario:login')
+def reject_donation(request, pk):
+    """
+    Reprovar uma doação: marca como não reutilizável e direciona para reciclagem
+    """
+    donation = get_object_or_404(Donation, pk=pk)
+
+    if request.method == 'POST':
+        donation.status = 'reciclagem'
+        donation.save()
+        messages.success(request, f'Doação "{donation.title}" marcada para reciclagem (não reutilizável).')
+        return redirect('doacoes:admin_donations_management')
+
     return redirect('doacoes:admin_donations_management')

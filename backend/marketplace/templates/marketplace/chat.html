@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Chat — {{ donation.title }}{% endblock %}
+{% block title %}Chat — {{ donation.title }}{% if donation.is_recycling %} — Reciclagem{% endif %}{% endblock %}
 
 {% block content %}
   <div class="container-fluid mt-4">
@@ -8,7 +8,7 @@
       <div class="chat-header-top">
         <div>
           <p class="text-muted mb-1">{{ donation.city|default:'Cidade não informada' }}</p>
-          <h1 class="h3 mb-2">Conversa sobre {{ donation.title }}</h1>
+          <h1 class="h3 mb-2">Conversa sobre {{ donation.title }} {% if donation.is_recycling %}<span class="badge bg-secondary ms-2">Reciclagem</span>{% endif %}</h1>
           {% if active_participant %}
             <small class="text-muted">Com {{ active_participant.get_full_name|default:active_participant.username }}</small>
           {% endif %}

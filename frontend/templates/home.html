@@ -9,7 +9,9 @@
     <h1 style="font-size: 2.5rem; margin-bottom: 1.5rem;">Transforme eletrônicos parados em novas histórias</h1>
     <p style="font-size: 1.1rem; margin-bottom: 2rem; max-width: 600px; margin-left: auto; margin-right: auto;">Conectamos quem precisa descartar ou doar equipamentos com ONGs, reparadores e makers que dão um novo propósito para cada componente.</p>
     <div class="cta-group" style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-      <a class="btn btn-light btn-lg" href="{% url 'doacoes:create' %}">Anunciar item</a>
+      {% if request.user.is_authenticated and request.user.profile.user_type == 'doador' %}
+        <a class="btn btn-light btn-lg" href="{% url 'doacoes:create' %}">Anunciar item</a>
+      {% endif %}
       <a class="btn btn-outline-light btn-lg" href="{% url 'doacoes:index' %}">Explorar itens</a>
     </div>
   </section>

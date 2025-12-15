@@ -9,7 +9,7 @@
       <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
         <div>
           <p class="text-muted mb-1">{{ donation.city|default:'Cidade não informada' }}</p>
-          <h1 class="h3 mb-1">{{ donation.title }}</h1>
+          <h1 class="h3 mb-1">{{ donation.title }} {% if donation.is_recycling %}<span class="badge bg-secondary ms-2">Reciclagem</span>{% endif %}</h1>
           <span class="pill">{{ donation.get_condition_display }}</span>
         </div>
         <div class="d-flex gap-2 flex-wrap">
@@ -69,6 +69,17 @@
 
         <dt class="col-md-3">Telefone</dt>
         <dd class="col-md-9">{{ donation.contact_phone|default:"—" }}</dd>
+        
+        <dt class="col-md-3">Beneficiário</dt>
+        <dd class="col-md-9">
+          {% if donation.is_recycling and donation.recycling_partner_name %}
+            {{ donation.recycling_partner_name }}
+          {% elif donation.beneficiary %}
+            {{ donation.beneficiary.get_full_name|default:donation.beneficiary.username }}
+          {% else %}
+            —
+          {% endif %}
+        </dd>
       </dl>
     </section>
 

@@ -67,18 +67,21 @@
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">Atualizar status</h5>
-            <span class="text-muted small">Sequência: Criado → Coletado → Enviado → Processado → Certificado</span>
+            <span class="text-muted small">Sequência: Criado → Coletado → Processado → Certificado</span>
           </div>
-          <form method="post" action="{% url 'doacoes:recycling_update_batch_status' batch.pk %}" class="row g-3 align-items-end">
+            <form method="post" action="{% url 'doacoes:recycling_update_batch_status' batch.pk %}" class="row g-3 align-items-end">
             {% csrf_token %}
             <div class="col-sm-4">
               <label class="form-label">Novo status</label>
               <select class="form-select" name="status" required>
                 <option value="" selected disabled>Escolha</option>
-                <option value="coletado">Coletado</option>
-                <option value="enviado">Enviado ao reciclador</option>
-                <option value="processado">Processado</option>
-                <option value="certificado">Certificado</option>
+                {% if next_statuses %}
+                  {% for val, label in next_statuses %}
+                    <option value="{{ val }}">{{ label }}</option>
+                  {% endfor %}
+                {% else %}
+                  <option value="" disabled>Sem transições disponíveis</option>
+                {% endif %}
               </select>
             </div>
             <div class="col-sm-4">

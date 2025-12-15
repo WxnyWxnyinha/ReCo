@@ -8,7 +8,7 @@ from django.contrib import messages
 from django.db.models import Sum, Count
 from django.utils import timezone
 from datetime import datetime, timedelta
-from .models import RecyclingBatch, RecyclingPartner, Donation
+from .models import RecyclingBatch, RecyclingPartner, Donation, Delivery
 from .notifications import send_recycling_notification
 
 
@@ -96,7 +96,7 @@ def create_batch(request):
             items.update(status='em_rota')  # Em rota para reciclagem
         
         messages.success(request, f'Lote {batch.batch_code} criado com sucesso!')
-        return redirect('recycling_batch_detail', pk=batch.pk)
+        return redirect('doacoes:recycling_batch_detail', pk=batch.pk)
     
     # GET request
     partners = RecyclingPartner.objects.filter(is_active=True)
@@ -119,12 +119,29 @@ def batch_detail(request, pk):
     # Calcular impacto ambiental
     impact = batch.calculate_environmental_impact()
     
+    # Determinar próximos status válidos para este lote (para renderizar opções no template)
+    # Fluxo de status: Criado -> Coletado -> Processado -> Certificado
+    # Nota: removemos o passo 'enviado' do dropdown, pois o parceiro faz a auto-coleta
+    valid_transitions = {
+        'criado': ['coletado'],
+        'coletado': ['processado'],
+        'processado': ['certificado'],
+    }
+
+    # Mapa de rótulos para os choices do modelo
+    status_display = dict(RecyclingBatch.STATUS_CHOICES)
+    next_statuses = [
+        (s, status_display.get(s, s)) for s in valid_transitions.get(batch.status, [])
+    ]
+
     context = {
         'batch': batch,
         'impact': impact,
+        'next_statuses': next_statuses,
     }
     
     return render(request, 'marketplace/recycling/batch_detail.html', context)
+
 
 
 @login_required
@@ -132,22 +149,22 @@ def batch_detail(request, pk):
 def update_batch_status(request, pk):
     """Atualizar status do lote"""
     if request.method != 'POST':
-        return redirect('recycling_batch_detail', pk=pk)
+        return redirect('doacoes:recycling_batch_detail', pk=pk)
     
     batch = get_object_or_404(RecyclingBatch, pk=pk)
     new_status = request.POST.get('status')
     
     # Validar transições de status
+    # Mesma regra em backend — garantir que 'enviado' não seja aceito como próximo passo
     valid_transitions = {
         'criado': ['coletado'],
-        'coletado': ['enviado'],
-        'enviado': ['processado'],
+        'coletado': ['processado'],
         'processado': ['certificado'],
     }
     
     if new_status not in valid_transitions.get(batch.status, []):
         messages.error(request, 'Transição de status inválida!')
-        return redirect('recycling_batch_detail', pk=pk)
+        return redirect('doacoes:recycling_batch_detail', pk=pk)
     
     # Atualizar status e timestamps
     old_status = batch.status
@@ -155,8 +172,6 @@ def update_batch_status(request, pk):
     
     if new_status == 'coletado':
         batch.collected_at = timezone.now()
-    elif new_status == 'enviado':
-        batch.sent_at = timezone.now()
     elif new_status == 'processado':
         batch.processed_at = timezone.now()
         batch.processed_by = request.user
@@ -173,8 +188,38 @@ def update_batch_status(request, pk):
     # Enviar notificação
     send_recycling_notification(batch, old_status, new_status)
     
+    # Propagar novo status do lote para os itens associados (mapear para status das doações)
+    try:
+        # Quando o lote é marcado como coletado, o parceiro já possui os itens —
+        # considerar como entrega realizada: marcar doações como 'entregue' e criar/atualizar Delivery
+        if new_status == 'coletado':
+            batch.items.update(status='entregue')
+            try:
+                now = timezone.now()
+                for donation in batch.items.all():
+                    delivery, created = Delivery.objects.get_or_create(
+                        donation=donation,
+                        defaults={
+                            'driver': None,
+                            'status': 'entregue',
+                            'delivered_at': now,
+                        }
+                    )
+                    if not created:
+                        delivery.status = 'entregue'
+                        delivery.delivered_at = delivery.delivered_at or now
+                        delivery.save()
+            except Exception:
+                pass
+        elif new_status in ['processado', 'certificado']:
+            # Itens processados/certificados permanecem com status de entrega já registrado
+            batch.items.update(status='entregue')
+    except Exception:
+        # Não bloquear a atualização do lote caso haja problema ao atualizar itens
+        pass
+
     messages.success(request, f'Status atualizado para {batch.get_status_display()}!')
-    return redirect('recycling_batch_detail', pk=pk)
+    return redirect('doacoes:recycling_batch_detail', pk=pk)
 
 
 @login_required
@@ -182,7 +227,7 @@ def update_batch_status(request, pk):
 def upload_certificate(request, pk):
     """Upload do certificado de reciclagem"""
     if request.method != 'POST':
-        return redirect('recycling_batch_detail', pk=pk)
+        return redirect('doacoes:recycling_batch_detail', pk=pk)
     
     batch = get_object_or_404(RecyclingBatch, pk=pk)
     
@@ -197,7 +242,7 @@ def upload_certificate(request, pk):
     else:
         messages.error(request, 'Nenhum arquivo selecionado!')
     
-    return redirect('recycling_batch_detail', pk=pk)
+    return redirect('doacoes:recycling_batch_detail', pk=pk)
 
 
 @login_required

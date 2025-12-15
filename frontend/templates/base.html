@@ -21,7 +21,9 @@
       <div class="nav-actions">
         {% if request.user.is_authenticated %}
           <span class="welcome">Olá, {{ request.user.first_name|default:request.user.username }}</span>
-          <a class="btn btn-primary btn-sm" href="{% url 'doacoes:create' %}">Anunciar item</a>
+          {% if request.user.profile.user_type == 'doador' %}
+            <a class="btn btn-primary btn-sm" href="{% url 'doacoes:create' %}">Anunciar item</a>
+          {% endif %}
 
           <div class="nav-dropdown">
             <button class="btn btn-secondary btn-sm" type="button" data-nav-toggle aria-haspopup="true" aria-expanded="false" aria-label="Abrir menu de navegação">

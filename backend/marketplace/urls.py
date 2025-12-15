@@ -34,6 +34,7 @@ urlpatterns = [
     path('admin/dashboard/', admin_views.dashboard, name='admin_dashboard'),
     path('admin/doacoes/', admin_views.donations_management, name='admin_donations_management'),
     path('admin/doacoes/<int:pk>/aprovar/', admin_views.approve_donation, name='admin_approve_donation'),
+    path('admin/doacoes/<int:pk>/reprovar/', admin_views.reject_donation, name='admin_reject_donation'),
     path('admin/solicitacoes/', admin_views.requests_management, name='admin_requests_management'),
     path('admin/entregas/', admin_views.deliveries_management, name='admin_deliveries_management'),
     path('admin/entregas/<int:donation_id>/atribuir/', admin_views.assign_delivery, name='admin_assign_delivery'),

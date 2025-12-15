@@ -52,6 +52,28 @@ class Donation(models.Model):
     def __str__(self):
         return f"{self.title} — {self.get_status_display()}"
 
+    @property
+    def is_recycling(self):
+        """True se a doação está marcada para reciclagem (status ou lote)."""
+        if self.status == 'reciclagem':
+            return True
+        # Checa presença em lotes de reciclagem relacionados
+        try:
+            return self.recycling_batches.exists()
+        except Exception:
+            return False
+
+    @property
+    def recycling_partner_name(self):
+        """Retorna o nome da empresa do parceiro de reciclagem associado, se houver."""
+        try:
+            batch = self.recycling_batches.order_by('-created_at').first()
+            if batch and batch.partner:
+                return batch.partner.company_name
+        except Exception:
+            return None
+        return None
+
 
 class DonationRequest(models.Model):
     """Modelo para solicitação de uma doação por um beneficiário"""
@@ -168,6 +190,23 @@ class Delivery(models.Model):
     
     def is_completed(self):
         return self.status in ['entregue', 'cancelada']
+    
+    # Compatibilidade com templates/views antigos que usam `pickup_time` / `delivery_time`
+    @property
+    def pickup_time(self):
+        return self.picked_up_at
+
+    @pickup_time.setter
+    def pickup_time(self, value):
+        self.picked_up_at = value
+
+    @property
+    def delivery_time(self):
+        return self.delivered_at
+
+    @delivery_time.setter
+    def delivery_time(self, value):
+        self.delivered_at = value
 
 
 class RecyclingPartner(models.Model):

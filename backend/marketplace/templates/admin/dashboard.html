@@ -44,6 +44,9 @@
                 </div>
             </div>
         </div>
+    </div>
+</div>
+{% endblock %}
 
         <!-- Solicitações Pendentes -->
         <div class="col-md-3 mb-3">
@@ -114,7 +117,7 @@
                         <div class="list-group-item">
                             <div class="d-flex justify-content-between align-items-start">
                                 <div class="flex-grow-1">
-                                    <h6 class="mb-1">{{ donation.title }}</h6>
+                                    <h6 class="mb-1">{{ donation.title }} {% if donation.is_recycling %}<span class="badge bg-secondary ms-2">Reciclagem</span>{% endif %}</h6>
                                     <small class="text-muted">
                                         <i class="fas fa-user"></i> {{ donation.donor.get_full_name|default:donation.donor.username }}
                                     </small>
@@ -193,99 +196,71 @@
                                 <th>Doação</th>
                                 <th>Transportador</th>
                                 <th>Status</th>
-                                <th>Coleta</th>
-                                <th>Entrega</th>
+                                <th colspan="2">Recebimento</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for delivery in active_deliveries %}
                                 <tr>
-                                    <td>
-                                        <strong>{{ delivery.donation.title }}</strong>
-                                    </td>
-                                    <td>{{ delivery.driver.get_full_name|default:delivery.driver.username }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ delivery.get_status_display|lower|slice:":1" }}">
-                                            {{ delivery.get_status_display }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if delivery.pickup_time %}
-                                            {{ delivery.pickup_time|date:"d/m/Y H:i" }}
+                                        <td>
+                                            <strong>{{ delivery.donation.title }}</strong>
+                                        </td>
+                                        <td>
+                                            {% if delivery.is_recycling %}
+                                                <span class="text-muted">Coleta Própria</span>
+                                            {% else %}
+                                                {{ delivery.driver.get_full_name|default:delivery.driver.username }}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if delivery.display_status_label %}
+                                                <span class="badge bg-info">{{ delivery.display_status_label }}</span>
+                                            {% else %}
+                                                <span class="badge bg-{{ delivery.get_status_display|lower|slice:":1" }}">{{ delivery.get_status_display }}</span>
+                                            {% endif %}
+                                        </td>
+                                        {% if delivery.is_recycling %}
+                                            <td colspan="2">
+                                                {% if delivery.delivery_time %}
+                                                    <strong>Recebido pelo parceiro:</strong>
+                                                    {{ delivery.delivery_time|date:"d/m/Y H:i" }}
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
                                         {% else %}
-                                            <span class="text-muted">—</span>
+                                            <td>
+                                                {% if delivery.pickup_time %}
+                                                    {{ delivery.pickup_time|date:"d/m/Y H:i" }}
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if delivery.delivery_time %}
+                                                    {{ delivery.delivery_time|date:"d/m/Y H:i" }}
+                                                {% else %}
+                                                    <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
                                         {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if delivery.delivery_time %}
-                                            {{ delivery.delivery_time|date:"d/m/Y H:i" }}
-                                        {% else %}
-                                            <span class="text-muted">—</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        <a href="{% url 'doacoes:admin_deliveries_management' %}" class="btn btn-sm btn-outline-secondary">
-                                            Ver
-                                        </a>
-                                    </td>
-                                </tr>
-                            {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">
-                                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                                        Nenhuma entrega em progresso no momento
-                                    </td>
-                                </tr>
-                            {% endfor %}
+                                        <td>
+                                            <a href="{% url 'doacoes:admin_deliveries_management' %}" class="btn btn-sm btn-outline-secondary">
+                                                <!-- Widget de Entregas removido (usar página completa de Entregas para detalhe) -->
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">Nenhuma entrega ativa.</td>
+                                    </tr>
+                                {% endfor %}
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Resumo de Estatísticas Mensais -->
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <div class="card bg-light">
-                <div class="card-body text-center">
-                    <h3 class="text-primary mb-1">{{ stats.donations_this_month }}</h3>
-                    <small class="text-muted">Doações este mês</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card bg-light">
-                <div class="card-body text-center">
-                    <h3 class="text-info mb-1">{{ stats.requests_this_month }}</h3>
-                    <small class="text-muted">Solicitações este mês</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card bg-light">
-                <div class="card-body text-center">
-                    <h3 class="text-success mb-1">{{ stats.estimated_kg }}</h3>
-                    <small class="text-muted">Kg de resíduos reutilizados</small>
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
-
-<style>
-.border-left-primary {
-    border-left: 4px solid #0d6efd !important;
-}
-.border-left-warning {
-    border-left: 4px solid #ffc107 !important;
-}
-.border-left-info {
-    border-left: 4px solid #0dcaf0 !important;
-}
-.border-left-success {
-    border-left: 4px solid #198754 !important;
-}
-</style>
 {% endblock %}

@@ -100,9 +100,7 @@
                         <th>Doação</th>
                         <th>Transportador</th>
                         <th>Status</th>
-                        <th>Coleta</th>
-                        <th>Entrega</th>
-                        <th>Tempo Decorrido</th>
+                        <th colspan="3">Recebimento</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -110,62 +108,88 @@
                     {% for delivery in deliveries %}
                         <tr>
                             <td>
-                                <strong>{{ delivery.donation.title|truncatewords:3 }}</strong>
+                                <strong>
+                                    {{ delivery.donation.title|truncatewords:3 }}
+                                    {% if delivery.is_recycling %}
+                                        <span class="badge bg-secondary ms-2">Reciclagem</span>
+                                    {% endif %}
+                                </strong>
                                 <br>
                                 <small class="text-muted">Beneficiário: 
-                                    {% with request=delivery.donation.donationrequest_set.first %}
-                                        {% if request %}
-                                            {{ request.beneficiary.get_full_name|default:request.beneficiary.username }}
-                                        {% else %}
-                                            <em>Sem solicitação</em>
-                                        {% endif %}
-                                    {% endwith %}
+                                    {% if delivery.is_recycling %}
+                                        {{ delivery.recycling_partner_name }}
+                                    {% else %}
+                                        {% with request=delivery.donation.donationrequest_set.first %}
+                                            {% if request %}
+                                                {{ request.beneficiary.get_full_name|default:request.beneficiary.username }}
+                                            {% else %}
+                                                <em>Sem solicitação</em>
+                                            {% endif %}
+                                        {% endwith %}
+                                    {% endif %}
                                 </small>
                             </td>
                             <td>
-                                {% if delivery.driver %}
-                                    <i class="fas fa-user"></i>
-                                    {{ delivery.driver.get_full_name|default:delivery.driver.username }}
+                                {% if delivery.is_recycling %}
+                                    <span class="text-muted">Coleta Própria</span>
                                 {% else %}
-                                    <span class="text-muted">Não atribuído</span>
+                                    {% if delivery.driver %}
+                                        <i class="fas fa-user"></i>
+                                        {{ delivery.driver.get_full_name|default:delivery.driver.username }}
+                                    {% else %}
+                                        <span class="text-muted">Não atribuído</span>
+                                    {% endif %}
                                 {% endif %}
                             </td>
                             <td>
-                                {% if delivery.status == 'atribuida' %}
-                                    <span class="badge bg-warning">Atribuída</span>
-                                {% elif delivery.status == 'coletada' %}
-                                    <span class="badge bg-info">Coletada</span>
-                                {% elif delivery.status == 'em_transito' %}
-                                    <span class="badge bg-info">Em Trânsito</span>
-                                {% elif delivery.status == 'entregue' %}
-                                    <span class="badge bg-success">Entregue</span>
-                                {% elif delivery.status == 'cancelada' %}
-                                    <span class="badge bg-danger">Cancelada</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if delivery.pickup_time %}
-                                    {{ delivery.pickup_time|date:"d/m/Y H:i" }}
+                                {% if delivery.donation.status == 'em_rota' %}
+                                    <span class="badge bg-info">Em Rota</span>
                                 {% else %}
-                                    <span class="text-muted">—</span>
+                                    {% if delivery.status == 'atribuida' %}
+                                        <span class="badge bg-warning">Atribuída</span>
+                                    {% elif delivery.status == 'coletada' %}
+                                        <span class="badge bg-info">Coletada</span>
+                                    {% elif delivery.status == 'em_transito' %}
+                                        <span class="badge bg-info">Em Trânsito</span>
+                                    {% elif delivery.status == 'entregue' %}
+                                        <span class="badge bg-success">Entregue</span>
+                                    {% elif delivery.status == 'cancelada' %}
+                                        <span class="badge bg-danger">Cancelada</span>
+                                    {% endif %}
                                 {% endif %}
                             </td>
-                            <td>
-                                {% if delivery.delivery_time %}
-                                    {{ delivery.delivery_time|date:"d/m/Y H:i" }}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if delivery.pickup_time and delivery.delivery_time %}
-                                    {% with duration=delivery.delivery_time|add:delivery.pickup_time|timeuntil %}
+                            {% if delivery.is_recycling %}
+                                <td colspan="3">
+                                    {% if delivery.delivery_time %}
+                                        <strong>Recebido pelo parceiro:</strong>
+                                        {{ delivery.delivery_time|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            {% else %}
+                                <td>
+                                    {% if delivery.pickup_time %}
+                                        {{ delivery.pickup_time|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if delivery.delivery_time %}
+                                        {{ delivery.delivery_time|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if delivery.pickup_time and delivery.delivery_time %}
                                         {{ delivery.delivery_time|timesince:delivery.pickup_time }}
-                                    {% endwith %}
-                                {% else %}
-                                    <span class="text-muted">—</span>
-                                {% endif %}
-                            </td>
+                                    {% else %}
+                                        <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
                             <td>
                                 <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#deliveryModal{{ delivery.pk }}" title="Ver detalhes">
                                     <i class="fas fa-eye me-1"></i>Ver

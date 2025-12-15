@@ -15,7 +15,11 @@
                 <!-- Resumo da Doação -->
                 <div class="alert alert-info" role="alert">
                     <h5 class="alert-heading">Item Solicitado</h5>
-                    <p class="mb-0"><strong>{{ donation.title }}</strong></p>
+                    <p class="mb-0"><strong>{{ donation.title }}</strong>
+                    {% if donation.is_recycling %}
+                        <span class="badge bg-secondary ms-2">Reciclagem</span>
+                    {% endif %}
+                    </p>
                     <p class="mb-0">Condição: <span class="badge bg-success">{{ donation.get_condition_display }}</span></p>
                     </div>
 
