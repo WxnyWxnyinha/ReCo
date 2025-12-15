@@ -71,14 +71,7 @@ def dashboard(request):
     # Anexar flags de reciclagem para uso no template
     pending_donations = []
     for pd in pending_qs:
-        is_recycling = pd.recycling_batches.exists()
-        recycling_partner_name = None
-        if is_recycling:
-            latest_batch = pd.recycling_batches.order_by('-created_at').first()
-            if latest_batch and latest_batch.partner:
-                recycling_partner_name = latest_batch.partner.company_name
-        pd.is_recycling = is_recycling
-        pd.recycling_partner_name = recycling_partner_name
+        # usar propriedades de `Donation` para `is_recycling` e `recycling_partner_name`
         pending_donations.append(pd)
     pending_requests = DonationRequest.objects.filter(status='pendente').select_related('donation', 'beneficiary')[:5]
     # Mostrar apenas entregas efetivamente coletadas ou em trânsito — esconder atribuídas
@@ -139,14 +132,7 @@ def donations_management(request):
     # Preparar lista para template: anexar atributos úteis (evitar chamadas complexas no template)
     donations_list = []
     for donation in donations:
-        is_recycling = donation.recycling_batches.exists()
-        recycling_partner_name = None
-        if is_recycling:
-            latest_batch = donation.recycling_batches.order_by('-created_at').first()
-            if latest_batch and latest_batch.partner:
-                recycling_partner_name = latest_batch.partner.company_name
-        donation.is_recycling = is_recycling
-        donation.recycling_partner_name = recycling_partner_name
+        # usar propriedades de `Donation` no template (não sobrescrever o atributo)
         donations_list.append(donation)
 
     context = {
